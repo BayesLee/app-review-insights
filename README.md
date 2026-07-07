@@ -1,69 +1,69 @@
-# LaienTech iOS App 评论分析与版本规划笔试题
+# LaienTech iOS App Review Analysis and Version Planning Assessment
 
-## 题目背景
+## Background
 
-本题以 Apple App Store 上的真实 iOS App 为分析对象：
+This assessment is based on a real iOS app listed on the Apple App Store:
 
 https://apps.apple.com/us/app/workout-for-women-home-gym/id839285684
 
-你需要围绕该 App 的用户评论完成一次从数据采集、评论清洗、评论分类、问题分析、版本规划、PRD 编写到测试用例设计的完整产品分析流程，并通过一个可运行的 UI 界面展示最终结果。
+You are expected to complete a full product analysis workflow around this app's user reviews, covering data collection, review cleaning, review classification, issue analysis, version planning, PRD writing, and test case design. The final results should be presented through a runnable UI.
 
-本题重点考察候选人的 vibecoding 能力。候选人需要通过 vibecoding 的方式完成数据采集、数据清洗与分析、产品需求抽象、版本规划、测试用例设计，以及将分析过程产品化呈现的完整流程。
+This assessment focuses on the candidate's vibe coding ability. Candidates should use vibe coding to complete the full process: collecting data, cleaning and analyzing reviews, abstracting product requirements, planning versions, designing test cases, and productizing the analysis workflow into an interactive experience.
 
-## 任务目标
+## Objective
 
-请完成一个可运行的工具或 Web 应用。用户在界面中输入以下 App Store 链接：
+Build a runnable tool or web application. In the UI, the user should be able to enter the following App Store link:
 
 ```text
 https://apps.apple.com/us/app/workout-for-women-home-gym/id839285684
 ```
 
-点击“开始”后，系统需要自动完成以下流程，并在界面中展示结果：
+After the user clicks "Start", the system should automatically complete the following workflow and display the results in the UI:
 
-1. 采集该 App 的评论数据。
-2. 清洗并结构化评论数据。
-3. 对评论进行分类与分析。
-4. 基于分析结果制定下一个版本的更新计划，并形成 PRD。
-5. 如果需求工程量过大，需要拆分版本发布计划。
-6. 基于 PRD 生成测试用例。
-7. 每条测试用例必须标记其对应或来源的用户评论。
-8. 在 UI 界面展示完整工作流步骤进度，例如采集、清洗、分类、分析、生成 PRD、生成测试用例等阶段的当前状态。
-9. 在 UI 界面展示当前进度对应的阶段性交付物，例如原始评论数据、清洗后数据、分类结果、分析结论、PRD 草稿、测试用例草稿等。
-10. 在 UI 界面展示分析结果、PRD 结果和测试用例结果。
+1. Collect review data for the app.
+2. Clean and structure the review data.
+3. Classify and analyze the reviews.
+4. Create an update plan for the next version based on the analysis, and produce a PRD.
+5. If the required scope is too large, split it into a multi-version release plan.
+6. Generate test cases based on the PRD.
+7. Mark the corresponding or source user review for every test case.
+8. Display the progress of the full workflow in the UI, including stages such as collection, cleaning, classification, analysis, PRD generation, and test case generation.
+9. Display the interim deliverables for the current stage, such as raw review data, cleaned data, classification results, analysis findings, PRD draft, and test case draft.
+10. Display the final analysis results, PRD, and test cases in the UI.
 
-## 交付物
+## Deliverables
 
-请提交 GitHub 项目链接，并保证项目可以在本地运行。
+Submit a GitHub project link and ensure the project can run locally.
 
-GitHub 项目中应包含完整源码、依赖配置、运行说明、采集方式说明，以及必要的示例输出或缓存数据，方便面试官在无法访问外部网络时查看结果。
+The GitHub project should include complete source code, dependency configuration, running instructions, an explanation of the data collection method, and any necessary sample output or cached data so that interviewers can review the results even when external network access is unavailable.
 
-GitHub 项目需要保留完整提交记录，用于展示候选人的实现过程、迭代过程和 vibecoding 使用过程。
+The GitHub project should preserve a complete commit history to show the candidate's implementation process, iteration process, and use of vibe coding.
 
-## 技术限制与说明
+## Technical Requirements and Notes
 
-- 技术栈不限。
-- 可以使用前端框架、后端框架、数据分析库、可视化库、自然语言处理模型或大模型 API。
-- 可以使用公开接口或第三方采集库，但必须说明数据来源和限制。
-- 需要注意访问频率控制，避免对目标站点造成异常请求压力。
-- 不允许提交无法运行的纯文档方案。
+- There is no restriction on the tech stack.
+- You may use frontend frameworks, backend frameworks, data analysis libraries, visualization libraries, natural language processing models, or large language model APIs.
+- You may use public APIs or third-party data collection libraries, but you must clearly explain the data source and its limitations.
+- Pay attention to request rate limits and avoid placing abnormal load on the target site.
+- A non-runnable document-only submission is not acceptable.
 
-## 评分标准
+## Evaluation Criteria
 
-本题重点考察候选人是否能把真实用户评论转化为可执行的产品方案。评分时主要关注：
+This assessment focuses on whether the candidate can turn real user reviews into an executable product plan. The evaluation will mainly consider:
 
-- 数据是否真实、可复现，并能说明采集来源和限制。
-- 评论清洗、分类和分析是否合理，能否提炼出具体用户问题。
-- PRD 是否围绕用户问题展开，需求边界、优先级和版本规划是否清晰。
-- 测试用例是否覆盖 PRD，并能追溯到对应用户评论。
-- UI 是否完整展示流程和结果，项目是否可本地运行、交付说明是否清楚。
+- Whether the data is authentic and reproducible, with a clear explanation of its source and limitations.
+- Whether review cleaning, classification, and analysis are reasonable, and whether they surface concrete user problems.
+- Whether the PRD is grounded in user problems, with clear requirement boundaries, priorities, and version planning.
+- Whether the test cases cover the PRD and can be traced back to the corresponding user reviews.
+- Whether the UI clearly presents the workflow and results, and whether the project can run locally with clear delivery instructions.
 
-## 注意事项
+## Important Notes
 
-- 本题不是单纯的爬虫题，也不是单纯的页面展示题。
-- 重点是从真实用户评论中发现问题，并转化为可执行的产品需求和测试方案。
-- 如果 `https://apps.apple.com/us/app/workout-for-women-lose-weight/id839285684` 自动跳转到 `https://apps.apple.com/cn/iphone/today`，可以尝试访问 `https://apps.apple.com/cn/app/workout-for-women-lose-weight/id839285684`，但评论数据必须以美区评论为准。
-- 拉取评论数据不应直接从页面可见内容中抓取；App Store 评论数据有更合适的获取方式，请候选人自行探索并说明实现方法。
-- PRD 中的需求必须能追溯到具体用户评论。
-- 测试用例必须能验证对应需求是否解决了评论中提到的问题。
-- 如果使用 AI 生成分析结果，需要保留原始评论证据，并说明如何避免幻觉或不准确结论。
-- 如果数据量不足或采集受限，需要在结果中透明说明，不要伪造数据。
+- This is not merely a web scraping task, nor is it merely a UI presentation task.
+- The core challenge is to identify problems from real user reviews and turn them into executable product requirements and test plans.
+- If `https://apps.apple.com/us/app/workout-for-women-lose-weight/id839285684` automatically redirects to `https://apps.apple.com/cn/iphone/today`, you may try visiting `https://apps.apple.com/cn/app/workout-for-women-lose-weight/id839285684` instead. However, the review data must still come from the U.S. storefront.
+- Review data should not be collected by scraping only the visible content of the page. There are more appropriate ways to retrieve App Store review data; candidates are expected to explore them independently and explain their implementation.
+- Requirements in the PRD must be traceable to specific user reviews.
+- Test cases must be able to verify whether the corresponding requirements solve the problems raised in those reviews.
+- If AI is used to generate analysis results, the original review evidence must be retained, and the submission should explain how hallucinations or inaccurate conclusions were avoided.
+- If the amount of available data is limited or data collection is constrained, state this transparently in the results. Do not fabricate data.
