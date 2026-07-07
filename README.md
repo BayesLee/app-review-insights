@@ -6,6 +6,8 @@ This assessment is based on a real iOS app listed on the Apple App Store:
 
 https://apps.apple.com/us/app/workout-for-women-home-gym/id839285684
 
+If `https://apps.apple.com/us/app/workout-for-women-lose-weight/id839285684` automatically redirects to `https://apps.apple.com/cn/iphone/today`, you may try visiting `https://apps.apple.com/cn/app/workout-for-women-lose-weight/id839285684` instead. This fallback is only for opening the app detail page; the review data used in this assessment must come from the U.S. storefront.
+
 You are expected to complete a full product analysis workflow around this app's user reviews, covering data collection, review cleaning, review classification, issue analysis, version planning, PRD writing, and test case design. The final results should be presented through a runnable UI.
 
 This assessment focuses on the candidate's vibe coding ability. Candidates should use vibe coding to complete the full process: collecting data, cleaning and analyzing reviews, abstracting product requirements, planning versions, designing test cases, and productizing the analysis workflow into an interactive experience.
@@ -61,7 +63,6 @@ This assessment focuses on whether the candidate can turn real user reviews into
 
 - This is not merely a web scraping task, nor is it merely a UI presentation task.
 - The core challenge is to identify problems from real user reviews and turn them into executable product requirements and test plans.
-- If `https://apps.apple.com/us/app/workout-for-women-lose-weight/id839285684` automatically redirects to `https://apps.apple.com/cn/iphone/today`, you may try visiting `https://apps.apple.com/cn/app/workout-for-women-lose-weight/id839285684` instead. However, the review data must still come from the U.S. storefront.
 - Review data should not be collected by scraping only the visible content of the page. There are more appropriate ways to retrieve App Store review data; candidates are expected to explore them independently and explain their implementation.
 - Requirements in the PRD must be traceable to specific user reviews.
 - Test cases must be able to verify whether the corresponding requirements solve the problems raised in those reviews.
