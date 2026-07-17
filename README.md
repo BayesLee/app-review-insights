@@ -28,7 +28,7 @@ The user should also be able to provide an analysis goal or constraint, such as 
 
 After the user clicks "Start", the system should automatically complete the following workflow and display the results in the UI:
 
-1. Create an execution plan based on the user's goal and the available data.
+1. Determine the analysis scope based on the user's goal and the available data.
 2. Collect review data for the app.
 3. Clean, deduplicate, and structure the review data.
 4. Dynamically classify and analyze the reviews, rather than relying only on fixed keyword mappings or a predefined issue taxonomy.
@@ -36,14 +36,13 @@ After the user clicks "Start", the system should automatically complete the foll
 6. Create an update plan based on the analysis, produce a PRD, and split the scope into multiple versions when necessary.
 7. Generate test cases based on the PRD, with each test case linked to its requirement and source user reviews.
 8. Validate the traceability chain from reviews to findings, requirements, and test cases. Unsupported conclusions must be removed, revised, or explicitly marked as assumptions.
-9. Display the execution progress and agent trace in the UI, including the plan, stages, tool calls, important decisions, validation results, retries, and revisions.
+9. Display the execution progress in the UI, including the stages, intermediate results, validation results, errors, and revisions.
 10. Display the interim and final deliverables, including raw reviews, cleaned data, classification results, findings, PRD drafts, and test case drafts.
 
-## AI and Agent Requirements
+## AI Requirements
 
 - At least one core semantic task must be model-driven. Suitable tasks include dynamic topic discovery, issue consolidation, evidence-grounded analysis, requirement generation, or test case generation. Implementing all semantic analysis only through fixed keywords, regular expressions, lookup tables, or manually predefined mappings does not meet this requirement.
 - Deterministic rules are encouraged where they are appropriate, including data collection, deduplication, field normalization, validation, and safety checks. The submission should explain why rules, statistical methods, or language models were chosen for each stage.
-- The system must implement an agent execution loop that can plan, call tools or workflow capabilities, inspect intermediate results, validate evidence, and revise or retry when necessary. A fixed sequence of loading states or hard-coded outputs alone is not considered an agent execution loop.
 - Every major finding must include its source review IDs or excerpts, supporting sample count, confidence or uncertainty, and any material conflicting evidence. Model-generated conclusions must remain distinguishable from deterministic statistics.
 - The submission must document the model and provider used, the main prompts or tool definitions, model configuration, failure-handling strategy, and measures used to reduce hallucinations and unsupported conclusions.
 - Hosted APIs, local models, or other model runtimes may be used. Secrets must be supplied through environment configuration and must not be committed to the repository.
@@ -74,7 +73,6 @@ This assessment focuses on whether the candidate can turn real user reviews into
 - Whether the data is authentic and reproducible, with a clear explanation of its source and limitations.
 - Whether review cleaning, classification, and analysis are reasonable, and whether they surface concrete user problems.
 - Whether model-driven semantic analysis adds capability beyond fixed rules and generalizes to previously unseen reviews, apps, and analysis goals.
-- Whether the agent can create and execute a plan, use tools appropriately, expose meaningful decisions, and recover from insufficient data or intermediate failures.
 - Whether findings distinguish evidence, deterministic statistics, model-generated conclusions, uncertainty, and conflicting feedback.
 - Whether the PRD is grounded in user problems, with clear requirement boundaries, priorities, and version planning.
 - Whether the test cases cover the PRD and can be traced back to the corresponding user reviews.
@@ -87,6 +85,6 @@ This assessment focuses on whether the candidate can turn real user reviews into
 - Review data should not be collected by scraping only the visible content of the page. There are more appropriate ways to retrieve App Store review data; candidates are expected to explore them independently and explain their implementation.
 - Requirements in the PRD must be traceable to specific user reviews.
 - Test cases must be able to verify whether the corresponding requirements solve the problems raised in those reviews.
-- The use of an AI coding assistant during implementation does not by itself satisfy the AI and agent requirements. The submitted application must demonstrate these capabilities at runtime.
+- The use of an AI coding assistant during implementation does not by itself satisfy the AI requirements. The submitted application must demonstrate model-driven semantic analysis at runtime.
 - Interviewers may test the application with previously unseen data, mixed languages, duplicate or conflicting reviews, insufficient evidence, or temporary collection/model failures.
 - If the amount of available data is limited or data collection is constrained, state this transparently in the results. Do not fabricate data.
