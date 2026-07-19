@@ -1,0 +1,13 @@
+id,rating,title,content,author,date,version
+sample-csv-001,1,Subscription still locked,I paid for the yearly plan but the workouts are still locked. Restore purchase does not help.,Maya,2026-07-01,1.2.0
+sample-csv-002,2,Free trial charged immediately,The app said free trial but charged me right away. I cannot find where to cancel.,Alex,2026-07-02,1.2.0
+sample-csv-003,1,Workout crashed,"The workout video crashes after warm up, and my progress is lost every time.",Nora,2026-07-03,1.2.1
+sample-csv-004,2,中文反馈：训练计划太难找,更新后训练计划入口变得很难找，点了好几次才看到收藏的课程。,Chen,2026-07-04,1.2.1
+sample-csv-005,1,Mixed language login issue,"登录后一直转圈 loading，network is fine，但计划页面打不开。",Ivy,2026-07-05,1.3.0
+sample-csv-006,5,Great guided workouts,I love the short workouts and the reminders. Subscription worked fine for me.,Lina,2026-07-06,1.3.0
+sample-csv-007,4,Nice app after update,"The new plan layout is cleaner for me, and the videos load quickly.",Grace,2026-07-07,1.3.0
+sample-csv-008,5,Payment restored,Restore purchase worked instantly after reinstalling. Very useful workouts.,Olivia,2026-07-08,1.3.1
+sample-csv-009,3,希望增加低冲击训练,希望新增更多低冲击训练和膝盖友好的计划。,Zhang,2026-07-09,1.3.1
+sample-csv-010,2,No clear refund help,I need refund help but the support entry is hidden and the payment page has no clear next step.,Sam,2026-07-10,1.3.1
+sample-csv-011,2,No clear refund help,I need refund help but the support entry is hidden and the payment page has no clear next step.,Sam,2026-07-10,1.3.1
+,4,Missing id review,"The beginner course is good, but I want more flexible rest days.",Taylor,2026-07-11,1.3.2
