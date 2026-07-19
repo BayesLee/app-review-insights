@@ -520,6 +520,20 @@ button {
   font-weight: 700;
 }
 
+.scope-notes {
+  display: grid;
+  gap: 8px;
+  margin-top: 14px;
+}
+
+.scope-notes span {
+  border-left: 3px solid var(--brand);
+  padding: 8px 10px;
+  background: #f3f8f4;
+  color: var(--muted);
+  line-height: 1.45;
+}
+
 .compact-grid {
   display: grid;
   grid-template-columns: repeat(2, minmax(0, 1fr));

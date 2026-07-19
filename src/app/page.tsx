@@ -508,6 +508,13 @@ export default function Home() {
                       </span>
                     ))}
                   </div>
+                  {result.scope.notes.length > 0 ? (
+                    <div className="scope-notes">
+                      {result.scope.notes.map((note) => (
+                        <span key={note}>{note}</span>
+                      ))}
+                    </div>
+                  ) : null}
                 </>
               ) : (
                 <p className="empty-state">点击“开始分析”后，这里会展示本次评论分析的范围和目标。</p>

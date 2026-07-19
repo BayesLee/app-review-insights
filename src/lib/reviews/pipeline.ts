@@ -117,7 +117,12 @@ function buildScopeSummary(input: {
   ];
 
   if (input.warnings.length > 0) {
-    notes.push("部分评论页采集失败，结果会保留失败页信息。");
+    notes.push(
+      input.dataSource.type === "app-store"
+        ? "部分评论页采集失败，结果会保留失败页信息。"
+        : "导入数据存在可清洗的问题，结果已保留 warning 供检查。"
+    );
+    notes.push(...input.warnings);
   }
 
   return {
