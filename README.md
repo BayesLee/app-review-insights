@@ -1,5 +1,33 @@
 # LaienTech iOS App Review Analysis and Version Planning Assessment
 
+## Local Development
+
+This project is implemented as a local Next.js + TypeScript web application.
+
+On this machine, a portable Node.js runtime is available at:
+
+```text
+D:\A项目\Laien\.tools\node
+```
+
+Recommended workflow with Codex:
+
+```powershell
+cd D:\A项目\Laien\app-review-insights-main
+$env:PATH = "D:\A项目\Laien\.tools\node;$env:PATH"
+npm install
+npm run dev
+```
+
+Then open:
+
+```text
+http://127.0.0.1:3000
+```
+
+Environment variables should be copied from `.env.example` into `.env.local`.
+Do not commit API keys or other secrets.
+
 ## Background
 
 This assessment uses the following real iOS app as the primary development and demonstration example:
