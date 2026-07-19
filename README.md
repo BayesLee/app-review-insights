@@ -28,11 +28,24 @@ http://127.0.0.1:3000
 Environment variables should be copied from `.env.example` into `.env.local`.
 Do not commit API keys or other secrets.
 
+Example `.env.local`:
+
+```text
+OPENAI_API_KEY=your_api_key_here
+OPENAI_BASE_URL=
+OPENAI_MODEL=gpt-4o-mini
+MAX_REVIEW_PAGES=4
+```
+
+`OPENAI_BASE_URL` is optional. Set it only when using an OpenAI-compatible provider or proxy.
+
 ## Current Implementation
 
 - The UI can submit an App Store link and analysis goal to `/api/analyze`.
 - The backend parses the app id, requests U.S. storefront review rows, normalizes reviews, removes empty/malformed/duplicate items, and returns basic metrics.
 - The UI displays collection status, cleaned counts, rating distribution, low-rating ratio, data-source limitations, and low-rating review samples.
+- The backend performs model-driven issue discovery on cleaned reviews when `OPENAI_API_KEY` is configured.
+- The UI clearly separates deterministic statistics from AI model analysis results.
 
 ## Data Collection Method
 
@@ -45,6 +58,44 @@ x-apple-store-front: 143441-1,29
 Each request fetches a 50-review page sorted by most recent reviews. The implementation caps online collection to at most 10 pages to avoid abnormal request volume.
 
 Known limitation: this stable endpoint does not return the app version for each review, so version-level analysis is currently marked as a data limitation instead of being inferred or fabricated. A later step should add cached sample data and JSON/CSV import so reviewers can evaluate the app when Apple's external endpoint is unavailable.
+
+## AI Issue Discovery
+
+The current AI step only discovers user problem themes. It does not generate PRDs or test cases yet.
+
+Workflow:
+
+1. The server assigns stable run-local review ids such as `R-001`, `R-002`, and `R-003` to all cleaned reviews.
+2. The server sends all 1-2 star reviews to the model as issue evidence.
+3. The server also sends at most 20 recent 4-5 star reviews as conflict candidates.
+4. The prompt asks the model to dynamically create theme titles from the current review set. The implementation does not use fixed keyword maps or a predefined issue taxonomy as the core classifier.
+5. The model must return strict JSON:
+
+```json
+{
+  "themes": [
+    {
+      "issueId": "F-001",
+      "title": "问题标题",
+      "summary": "问题总结",
+      "severity": "high",
+      "confidence": "high",
+      "supportingReviewIds": ["R-001"],
+      "conflictingReviewIds": ["R-010"]
+    }
+  ]
+}
+```
+
+Hallucination controls:
+
+- Model output is parsed as JSON and rejected if it is invalid.
+- `supportingReviewIds` must match valid 1-2 star review ids from the current cleaned dataset.
+- `conflictingReviewIds` must match valid selected 4-5 star review ids from the current cleaned dataset.
+- Any fabricated review id is removed before display.
+- `supportCount` is computed by code after validation, never trusted from the model.
+- Themes with no valid supporting reviews are removed.
+- Missing API keys, model API failures, invalid JSON, and skipped low-rating analysis are shown in the UI instead of fabricating results.
 
 ## Background
 

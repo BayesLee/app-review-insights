@@ -64,6 +64,8 @@ export type ScopeSummary = {
   notes: string[];
 };
 
+import type { IssueDiscoveryResult } from "@/lib/ai/issue-discovery";
+
 export type PipelineResult = {
   scope: ScopeSummary;
   collection: Omit<CollectionResult, "reviews"> & {
@@ -73,5 +75,6 @@ export type PipelineResult = {
   metrics: ReviewMetrics;
   reviews: CleanedReview[];
   sampleReviews: CleanedReview[];
+  issueDiscovery?: IssueDiscoveryResult;
   nextSteps: string[];
 };

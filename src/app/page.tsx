@@ -64,13 +64,14 @@ const stages = [
   }
 ] as const;
 
-type StageStatus = "done" | "running" | "pending" | "planned" | "error";
+type StageStatus = "done" | "running" | "pending" | "planned" | "skipped" | "error";
 
 const statusText: Record<StageStatus, string> = {
   done: "完成",
   running: "运行中",
   pending: "待运行",
   planned: "待接入",
+  skipped: "跳过",
   error: "异常"
 };
 
@@ -127,11 +128,27 @@ export default function Home() {
     }
 
     if (isLoading) {
-      return index <= 2 ? "running" : "pending";
+      return index <= 3 ? "running" : "pending";
     }
 
     if (result) {
-      return index <= 2 ? "done" : "planned";
+      if (index <= 2) {
+        return "done";
+      }
+
+      if (index === 3) {
+        if (result.issueDiscovery?.status === "success") {
+          return "done";
+        }
+
+        if (result.issueDiscovery?.status === "skipped") {
+          return "skipped";
+        }
+
+        return "error";
+      }
+
+      return "planned";
     }
 
     return "pending";
@@ -218,7 +235,7 @@ export default function Home() {
                 <h2>评论到路线图工作台</h2>
                 <p>
                   {result
-                    ? `已采集 ${result.collection.rawCount} 条原始评论，并清洗出 ${result.cleaning.cleanedCount} 条有效评论。下一阶段将接入模型分析、PRD 生成和证据链校验。`
+                    ? `已采集 ${result.collection.rawCount} 条原始评论，清洗出 ${result.cleaning.cleanedCount} 条有效评论，并返回服务端 AI 主题分析状态。`
                     : "当前阶段已接入真实评论采集、清洗去重和基础统计。模型分析、PRD 生成和证据链校验将在后续阶段继续接入。"}
                 </p>
               </div>
@@ -235,6 +252,7 @@ export default function Home() {
               </div>
             ) : null}
 
+            <h3 className="panel-subtitle">基础统计结果</h3>
             <div className="metric-grid">
               <div className="metric">
                 <span>原始评论</span>
@@ -366,6 +384,17 @@ export default function Home() {
             </article>
 
             <article className="result-panel wide">
+              <h3>AI 模型分析结果</h3>
+              {result?.issueDiscovery ? (
+                <IssueDiscoveryPanel result={result.issueDiscovery} />
+              ) : (
+                <p className="empty-state">
+                  点击“开始分析”后，服务端会调用 OpenAI-compatible API，从低评分评论中动态发现用户问题主题。
+                </p>
+              )}
+            </article>
+
+            <article className="result-panel wide">
               <h3>评论样例</h3>
               {result ? (
                 <div className="review-list">
@@ -446,4 +475,120 @@ function shortId(value: string): string {
 
 function hasKnownVersions(result: PipelineResult): boolean {
   return result.metrics.topVersions.some((item) => item.version !== "unknown");
+}
+
+function IssueDiscoveryPanel({ result }: { result: NonNullable<PipelineResult["issueDiscovery"]> }) {
+  return (
+    <div className="ai-panel">
+      <div className="ai-meta-grid">
+        <div>
+          <span>实际模型</span>
+          <strong>{result.model ?? "未配置"}</strong>
+        </div>
+        <div>
+          <span>发送给模型的评论</span>
+          <strong>{result.inputReviewCount}</strong>
+        </div>
+        <div>
+          <span>1-2 星评论</span>
+          <strong>{result.lowRatingReviewCount}</strong>
+        </div>
+        <div>
+          <span>冲突候选评论</span>
+          <strong>{result.conflictCandidateCount}</strong>
+        </div>
+      </div>
+
+      {result.status === "error" ? (
+        <div className="error-box inline-error">
+          <AlertCircle size={18} />
+          <span>{result.error}</span>
+        </div>
+      ) : null}
+
+      {result.status === "skipped" ? (
+        <p className="source-line">{result.warnings[0] ?? "AI 主题分析已跳过。"}</p>
+      ) : null}
+
+      {result.warnings.length > 0 && result.status !== "skipped" ? (
+        <div className="warning-list">
+          {result.warnings.map((warning) => (
+            <span key={warning}>{warning}</span>
+          ))}
+        </div>
+      ) : null}
+
+      {result.status === "success" && result.themes.length === 0 ? (
+        <p className="empty-state">模型没有输出具备有效证据的主题，或所有主题都因缺少有效评论 ID 被过滤。</p>
+      ) : null}
+
+      {result.themes.length > 0 ? (
+        <div className="theme-list">
+          {result.themes.map((theme) => (
+            <article className="theme-card" key={theme.issueId}>
+              <div className="theme-head">
+                <div>
+                  <span className="issue-id">{theme.issueId}</span>
+                  <h4>{theme.title}</h4>
+                </div>
+                <div className="tag-row compact-tags">
+                  <span className={`tag severity-${theme.severity}`}>严重程度：{translateLevel(theme.severity)}</span>
+                  <span className={`tag confidence-${theme.confidence}`}>置信度：{translateLevel(theme.confidence)}</span>
+                  <span className="tag">有效支持 {theme.supportCount} 条</span>
+                </div>
+              </div>
+              <p>{theme.summary}</p>
+
+              <div className="evidence-columns">
+                <div>
+                  <h5>支持评论原文</h5>
+                  {theme.supportingReviews.map((review) => (
+                    <ReviewEvidenceBlock key={review.reviewId} review={review} />
+                  ))}
+                </div>
+                <div>
+                  <h5>冲突评论原文</h5>
+                  {theme.conflictingReviews.length > 0 ? (
+                    theme.conflictingReviews.map((review) => (
+                      <ReviewEvidenceBlock key={review.reviewId} review={review} />
+                    ))
+                  ) : (
+                    <p className="empty-state">本主题未找到有效冲突评论。</p>
+                  )}
+                </div>
+              </div>
+            </article>
+          ))}
+        </div>
+      ) : null}
+    </div>
+  );
+}
+
+function ReviewEvidenceBlock({
+  review
+}: {
+  review: NonNullable<PipelineResult["issueDiscovery"]>["themes"][number]["supportingReviews"][number];
+}) {
+  return (
+    <div className="evidence-block">
+      <div className="review-meta">
+        <strong>{review.reviewId}</strong>
+        <span>{review.rating} 星</span>
+        <span>{formatDate(review.updatedAt)}</span>
+      </div>
+      <h6>{review.title || "无标题评论"}</h6>
+      <p>{truncate(review.body, 360)}</p>
+    </div>
+  );
+}
+
+function translateLevel(level: "high" | "medium" | "low"): string {
+  const map = {
+    high: "高",
+    medium: "中",
+    low: "低"
+  };
+
+  return map[level];
 }

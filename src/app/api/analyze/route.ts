@@ -1,5 +1,6 @@
 import { NextResponse } from "next/server";
 import { z } from "zod";
+import { discoverIssueThemes } from "@/lib/ai/issue-discovery";
 import { runReviewPipeline } from "@/lib/reviews/pipeline";
 
 export const runtime = "nodejs";
@@ -14,6 +15,13 @@ export async function POST(request: Request) {
   try {
     const payload = requestSchema.parse(await request.json());
     const result = await runReviewPipeline(payload);
+    result.issueDiscovery = await discoverIssueThemes({
+      reviews: result.reviews,
+      goal: result.scope.goal,
+      apiKey: process.env.OPENAI_API_KEY,
+      baseUrl: process.env.OPENAI_BASE_URL,
+      model: process.env.OPENAI_MODEL
+    });
 
     return NextResponse.json(result);
   } catch (error) {

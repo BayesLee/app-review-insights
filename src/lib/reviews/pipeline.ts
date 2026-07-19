@@ -39,9 +39,9 @@ export async function runReviewPipeline(input: {
     reviews: cleaning.reviews,
     sampleReviews: pickSampleReviews(cleaning.reviews),
     nextSteps: [
-      "接入模型驱动的动态主题发现，避免固定关键词分类。",
       "将洞察、需求和测试用例串成 review_id 可追溯链路。",
-      "补充 JSON/CSV 导入入口，支持离线评审和未知数据集。"
+      "补充 JSON/CSV 导入入口，支持离线评审和未知数据集。",
+      "在 AI 主题基础上继续生成 PRD 和测试用例。"
     ]
   };
 }
@@ -59,7 +59,7 @@ function buildScopeSummary(input: {
   const notes = [
     "当前数据来自美国区 App Store customer reviews JSON 接口。",
     `本次最多采集 ${input.maxPages} 页，每页约 50 条评论。`,
-    "当前阶段只执行确定性采集、清洗和统计，模型分析将在下一阶段接入。",
+    "基础统计由确定性代码生成；AI 主题分析由服务端模型调用生成并经过程序校验。",
     "当前稳定采集源不返回评论对应的 App 版本号，因此版本分析会先标记为数据限制。"
   ];
 
