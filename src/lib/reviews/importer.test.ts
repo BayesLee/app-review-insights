@@ -69,6 +69,18 @@ describe("review import", () => {
     expect(cleaned.report.emptyCount).toBe(1);
   });
 
+  it("removes reviews when content is missing even if title exists", () => {
+    const collection = collectImportedReviews({
+      type: "json-file",
+      content: JSON.stringify([{ id: "missing-body", rating: 1, title: "Only title" }])
+    });
+    const cleaned = cleanReviews(collection.reviews);
+
+    expect(collection.warnings.some((warning) => warning.includes("content 为空"))).toBe(true);
+    expect(cleaned.report.emptyCount).toBe(1);
+    expect(cleaned.reviews).toHaveLength(0);
+  });
+
   it("allows existing duplicate detection to remove duplicate imported reviews", () => {
     const collection = collectImportedReviews({
       type: "json-file",

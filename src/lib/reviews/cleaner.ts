@@ -17,7 +17,7 @@ export function cleanReviews(rawReviews: RawReview[]): {
   for (const review of rawReviews) {
     const normalizedText = normalizeText(`${review.title}\n${review.body}`);
 
-    if (!normalizedText) {
+    if (!review.body.trim()) {
       report.emptyCount += 1;
       continue;
     }
