@@ -38,6 +38,17 @@ button {
   cursor: pointer;
 }
 
+.sr-only {
+  position: absolute;
+  width: 1px;
+  height: 1px;
+  padding: 0;
+  overflow: hidden;
+  clip: rect(0, 0, 0, 0);
+  white-space: nowrap;
+  border: 0;
+}
+
 .shell {
   min-height: 100vh;
   padding: 24px;
@@ -153,6 +164,71 @@ button {
 .quick-goal:hover {
   border-color: var(--brand);
   background: var(--panel-soft);
+}
+
+.file-actions {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 8px;
+}
+
+.secondary-action {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 7px;
+  min-height: 36px;
+  border: 1px solid var(--line);
+  border-radius: 6px;
+  padding: 8px 10px;
+  background: #fbfcfa;
+  color: var(--brand-strong);
+  font-size: 13px;
+  font-weight: 800;
+  text-align: center;
+}
+
+.secondary-action:hover {
+  border-color: var(--brand);
+  background: var(--panel-soft);
+}
+
+.strong-action {
+  min-height: 42px;
+}
+
+.source-chip {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 8px;
+  border: 1px solid var(--line);
+  border-radius: 6px;
+  padding: 8px 10px;
+  background: #f8faf8;
+  font-size: 12px;
+}
+
+.source-chip span {
+  color: var(--muted);
+}
+
+.source-chip strong {
+  min-width: 0;
+  overflow-wrap: anywhere;
+  color: var(--ink);
+}
+
+.source-chip button,
+.inline-button {
+  border: 1px solid var(--line);
+  border-radius: 6px;
+  padding: 5px 8px;
+  background: #ffffff;
+  color: var(--brand-strong);
+  font-size: 12px;
+  font-weight: 800;
+  white-space: nowrap;
 }
 
 .primary {
@@ -310,7 +386,7 @@ button {
 
 .metric-grid {
   display: grid;
-  grid-template-columns: repeat(4, minmax(0, 1fr));
+  grid-template-columns: repeat(auto-fit, minmax(160px, 1fr));
   gap: 12px;
 }
 
@@ -353,6 +429,19 @@ button {
 
 .inline-error {
   margin: 14px 0 0;
+}
+
+.sample-banner {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  margin-bottom: 16px;
+  border: 1px solid #fde68a;
+  border-radius: 8px;
+  padding: 12px;
+  background: #fffbeb;
+  color: var(--warn);
+  font-weight: 800;
 }
 
 .result-grid {
@@ -598,13 +687,16 @@ button {
 }
 
 .plan-list,
-.requirement-list {
+.requirement-list,
+.testcase-list {
   display: grid;
   gap: 14px;
 }
 
 .plan-card,
-.requirement-card {
+.requirement-card,
+.testcase-card,
+.trace-card {
   border: 1px solid var(--line);
   border-radius: 8px;
   padding: 16px;
@@ -619,7 +711,8 @@ button {
 }
 
 .plan-card h4,
-.requirement-card h4 {
+.requirement-card h4,
+.testcase-card h4 {
   margin: 5px 0 0;
   font-size: 18px;
 }
@@ -672,6 +765,84 @@ button {
   border-radius: 8px;
   padding: 12px;
   background: #ffffff;
+}
+
+.trace-metrics {
+  display: grid;
+  grid-template-columns: repeat(5, minmax(0, 1fr));
+  gap: 12px;
+}
+
+.trace-metrics div {
+  border: 1px solid var(--line);
+  border-radius: 8px;
+  padding: 12px;
+  background: #fbfcfa;
+}
+
+.trace-metrics span {
+  display: block;
+  color: var(--muted);
+  font-size: 12px;
+}
+
+.trace-metrics strong {
+  display: block;
+  margin-top: 6px;
+  font-size: 20px;
+}
+
+.trace-list {
+  display: grid;
+  gap: 12px;
+}
+
+.trace-card summary {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 12px;
+  cursor: pointer;
+  font-weight: 800;
+}
+
+.trace-card summary strong {
+  color: var(--brand-strong);
+  white-space: nowrap;
+}
+
+.compact-warning {
+  margin-top: 12px;
+}
+
+.trace-path-list {
+  display: grid;
+  gap: 10px;
+  margin-top: 14px;
+}
+
+.trace-path {
+  border-top: 1px solid var(--line);
+  padding-top: 12px;
+}
+
+.trace-chain {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 8px;
+  margin-bottom: 8px;
+}
+
+.trace-chain strong {
+  color: var(--ink);
+}
+
+.export-panel {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 10px;
 }
 
 .tag-row {
@@ -804,13 +975,23 @@ button {
   .ai-meta-grid,
   .evidence-columns,
   .prd-grid,
-  .scope-grid {
+  .scope-grid,
+  .trace-metrics,
+  .file-actions {
     grid-template-columns: 1fr;
   }
 
   .theme-head,
   .plan-head {
     display: grid;
+  }
+
+  .sample-banner,
+  .error-box,
+  .source-chip,
+  .trace-card summary {
+    align-items: flex-start;
+    flex-direction: column;
   }
 
   .compact-tags {

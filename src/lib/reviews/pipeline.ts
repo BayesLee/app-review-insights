@@ -1,17 +1,19 @@
 import { resolveAnalysisGoal } from "../analysis-goal";
 import { cleanReviews, buildReviewMetrics } from "./cleaner";
 import { collectAppStoreReviews, parseAppStoreAppId } from "./collector";
-import type { PipelineResult, ScopeSummary } from "./types";
+import { collectImportedReviews, type ImportedReviewSource } from "./importer";
+import type { CollectionResult, DataSourceSummary, PipelineResult, ScopeSummary } from "./types";
 
 export async function runReviewPipeline(input: {
-  appUrl: string;
+  appUrl?: string;
   goal: string;
   maxPages?: number;
+  importSource?: ImportedReviewSource;
 }): Promise<PipelineResult> {
   const maxPages = Math.max(1, Math.min(input.maxPages ?? Number(process.env.MAX_REVIEW_PAGES ?? 4), 10));
-  const appId = parseAppStoreAppId(input.appUrl);
-  const collection = await collectAppStoreReviews({
+  const { collection, appId, dataSource } = await collectReviewsForInput({
     appUrl: input.appUrl,
+    importSource: input.importSource,
     maxPages
   });
   const cleaning = cleanReviews(collection.reviews);
@@ -20,6 +22,7 @@ export async function runReviewPipeline(input: {
     goal: resolveAnalysisGoal(input.goal),
     appId,
     maxPages,
+    dataSource,
     cleanedCount: cleaning.reviews.length,
     warnings: collection.warnings
   });
@@ -40,10 +43,52 @@ export async function runReviewPipeline(input: {
     reviews: cleaning.reviews,
     sampleReviews: pickSampleReviews(cleaning.reviews),
     nextSteps: [
-      "继续生成与 PRD 需求一一对应的测试用例。",
-      "补充 JSON/CSV 导入入口，支持离线评审和未知数据集。",
-      "将评论、问题、需求和测试用例串成完整可追溯链路。"
+      "检查 AI 输出中的 warnings，并在必要时调整分析目标重新运行。",
+      "导出 JSON 或 Markdown 报告，用于提交和现场讲解。",
+      "如果现场网络或模型不可用，可以打开示例缓存结果进行兜底演示。"
     ]
+  };
+}
+
+async function collectReviewsForInput(input: {
+  appUrl?: string;
+  importSource?: ImportedReviewSource;
+  maxPages: number;
+}): Promise<{
+  collection: CollectionResult;
+  appId: string;
+  dataSource: DataSourceSummary;
+}> {
+  if (input.importSource) {
+    const collection = collectImportedReviews(input.importSource);
+    const dataSource = buildImportedDataSource(input.importSource);
+
+    return {
+      collection,
+      appId: collection.appId,
+      dataSource
+    };
+  }
+
+  const appUrl = input.appUrl?.trim();
+
+  if (!appUrl) {
+    throw new Error("请输入 App Store 链接，或上传 JSON/CSV 评论文件。");
+  }
+
+  const appId = parseAppStoreAppId(appUrl);
+  const collection = await collectAppStoreReviews({
+    appUrl,
+    maxPages: input.maxPages
+  });
+
+  return {
+    collection,
+    appId,
+    dataSource: {
+      type: "app-store",
+      label: "App Store"
+    }
   };
 }
 
@@ -51,6 +96,7 @@ function buildScopeSummary(input: {
   goal: string;
   appId: string;
   maxPages: number;
+  dataSource: DataSourceSummary;
   cleanedCount: number;
   warnings: string[];
 }): ScopeSummary {
@@ -58,10 +104,16 @@ function buildScopeSummary(input: {
   const focusAreas = inferFocusAreas(goal);
   const evidenceLevel = input.cleanedCount >= 150 ? "充足" : input.cleanedCount >= 50 ? "一般" : "不足";
   const notes = [
-    "当前数据来自美国区 App Store customer reviews JSON 接口。",
-    `本次最多采集 ${input.maxPages} 页，每页约 50 条评论。`,
+    input.dataSource.type === "app-store"
+      ? "当前数据来自美国区 App Store customer reviews JSON 接口。"
+      : `当前数据来自${input.dataSource.label}，已复用同一套清洗、AI 分析和追溯校验流程。`,
+    input.dataSource.type === "app-store"
+      ? `本次最多采集 ${input.maxPages} 页，每页约 50 条评论。`
+      : "导入数据按单页本地数据集处理，缺失 id 会由代码生成稳定来源 ID。",
     "基础统计由确定性代码生成；AI 主题分析由服务端模型调用生成并经过程序校验。",
-    "当前稳定采集源不返回评论对应的 App 版本号，因此版本分析会先标记为数据限制。"
+    input.dataSource.type === "app-store"
+      ? "当前稳定采集源不返回评论对应的 App 版本号，因此版本分析会先标记为数据限制。"
+      : "导入文件中的 version 字段会参与版本反馈统计；缺失版本会标记为 unknown。"
   ];
 
   if (input.warnings.length > 0) {
@@ -73,9 +125,34 @@ function buildScopeSummary(input: {
     appId: input.appId,
     storefront: "us",
     maxPages: input.maxPages,
+    dataSource: input.dataSource,
     focusAreas,
     evidenceLevel,
     notes
+  };
+}
+
+function buildImportedDataSource(source: ImportedReviewSource): DataSourceSummary {
+  if (source.type === "json-file") {
+    return {
+      type: "json-file",
+      label: "JSON 文件",
+      fileName: source.fileName
+    };
+  }
+
+  if (source.type === "csv-file") {
+    return {
+      type: "csv-file",
+      label: "CSV 文件",
+      fileName: source.fileName
+    };
+  }
+
+  return {
+    type: "sample-data",
+    label: "示例数据",
+    fileName: source.fileName ?? "sample_data/reviews.json"
   };
 }
 

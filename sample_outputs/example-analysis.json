@@ -1,0 +1,445 @@
+{
+  "isSampleOutput": true,
+  "sampleNotice": "示例缓存结果，不是本次实时模型输出。",
+  "scope": {
+    "goal": "识别低评分评论中的主要用户问题，并结合高评分评论检查冲突反馈。",
+    "appId": "imported-reviews",
+    "storefront": "us",
+    "maxPages": 4,
+    "dataSource": {
+      "type": "sample-data",
+      "label": "示例数据",
+      "fileName": "sample_data/reviews.json"
+    },
+    "focusAreas": ["低评分评论", "综合评论问题"],
+    "evidenceLevel": "不足",
+    "notes": [
+      "这是用于现场兜底演示的缓存输出。",
+      "示例数据覆盖低评分问题、高评分冲突、重复评论、中英文混合评论和不同版本评论。",
+      "示例缓存结果不是本次实时模型输出，不代表当前 API 配置已经可用。"
+    ]
+  },
+  "collection": {
+    "appId": "imported-reviews",
+    "storefront": "us",
+    "source": "sample_data/reviews.json",
+    "fetchedAt": "2026-07-19T12:00:00.000Z",
+    "pages": [
+      {
+        "page": 1,
+        "url": "sample_data/reviews.json",
+        "count": 12,
+        "status": "success"
+      }
+    ],
+    "warnings": [],
+    "rawCount": 12
+  },
+  "cleaning": {
+    "rawCount": 12,
+    "cleanedCount": 11,
+    "emptyCount": 0,
+    "duplicateCount": 1,
+    "malformedCount": 0
+  },
+  "metrics": {
+    "averageRating": 2.73,
+    "lowRatingCount": 6,
+    "lowRatingRatio": 0.55,
+    "latestReviewAt": "2026-07-11T00:00:00.000Z",
+    "ratingDistribution": {
+      "1": 3,
+      "2": 3,
+      "3": 1,
+      "4": 2,
+      "5": 2
+    },
+    "topVersions": [
+      {
+        "version": "1.3.0",
+        "count": 3
+      },
+      {
+        "version": "1.3.1",
+        "count": 3
+      },
+      {
+        "version": "1.2.1",
+        "count": 2
+      }
+    ]
+  },
+  "reviews": [
+    {
+      "id": "sample-001",
+      "title": "Subscription still locked",
+      "body": "I paid for the yearly plan but the workouts are still locked. Restore purchase does not help.",
+      "rating": 1,
+      "version": "1.2.0",
+      "updatedAt": "2026-07-01T00:00:00.000Z",
+      "author": "Maya",
+      "country": "us",
+      "appId": "imported-reviews",
+      "page": 1,
+      "sourceUrl": "sample_data/reviews.json",
+      "normalizedText": "subscription still locked i paid for the yearly plan but the workouts are still locked. restore purchase does not help.",
+      "bodyLength": 89
+    },
+    {
+      "id": "sample-002",
+      "title": "Free trial charged immediately",
+      "body": "The app said free trial but charged me right away. I cannot find where to cancel.",
+      "rating": 2,
+      "version": "1.2.0",
+      "updatedAt": "2026-07-02T00:00:00.000Z",
+      "author": "Alex",
+      "country": "us",
+      "appId": "imported-reviews",
+      "page": 1,
+      "sourceUrl": "sample_data/reviews.json",
+      "normalizedText": "free trial charged immediately the app said free trial but charged me right away. i cannot find where to cancel.",
+      "bodyLength": 77
+    },
+    {
+      "id": "sample-003",
+      "title": "Workout crashed",
+      "body": "The workout video crashes after warm up, and my progress is lost every time.",
+      "rating": 1,
+      "version": "1.2.1",
+      "updatedAt": "2026-07-03T00:00:00.000Z",
+      "author": "Nora",
+      "country": "us",
+      "appId": "imported-reviews",
+      "page": 1,
+      "sourceUrl": "sample_data/reviews.json",
+      "normalizedText": "workout crashed the workout video crashes after warm up, and my progress is lost every time.",
+      "bodyLength": 73
+    }
+  ],
+  "sampleReviews": [
+    {
+      "id": "sample-001",
+      "title": "Subscription still locked",
+      "body": "I paid for the yearly plan but the workouts are still locked. Restore purchase does not help.",
+      "rating": 1,
+      "version": "1.2.0",
+      "updatedAt": "2026-07-01T00:00:00.000Z",
+      "author": "Maya",
+      "country": "us",
+      "appId": "imported-reviews",
+      "page": 1,
+      "sourceUrl": "sample_data/reviews.json",
+      "normalizedText": "subscription still locked i paid for the yearly plan but the workouts are still locked. restore purchase does not help.",
+      "bodyLength": 89
+    },
+    {
+      "id": "sample-003",
+      "title": "Workout crashed",
+      "body": "The workout video crashes after warm up, and my progress is lost every time.",
+      "rating": 1,
+      "version": "1.2.1",
+      "updatedAt": "2026-07-03T00:00:00.000Z",
+      "author": "Nora",
+      "country": "us",
+      "appId": "imported-reviews",
+      "page": 1,
+      "sourceUrl": "sample_data/reviews.json",
+      "normalizedText": "workout crashed the workout video crashes after warm up, and my progress is lost every time.",
+      "bodyLength": 73
+    }
+  ],
+  "issueDiscovery": {
+    "status": "success",
+    "model": "sample-cache",
+    "inputReviewCount": 10,
+    "lowRatingReviewCount": 6,
+    "conflictCandidateCount": 4,
+    "themes": [
+      {
+        "issueId": "F-001",
+        "title": "订阅支付后权益未生效",
+        "summary": "低评分用户集中反馈付费后课程仍被锁定、试用期立即扣费、取消入口难找，高评分评论中存在购买恢复正常的冲突反馈。",
+        "severity": "high",
+        "confidence": "high",
+        "supportingReviewIds": ["R-001", "R-002"],
+        "conflictingReviewIds": ["R-006", "R-008"],
+        "supportCount": 2,
+        "supportingReviews": [
+          {
+            "reviewId": "R-001",
+            "sourceReviewId": "sample-001",
+            "rating": 1,
+            "title": "Subscription still locked",
+            "body": "I paid for the yearly plan but the workouts are still locked. Restore purchase does not help.",
+            "version": "1.2.0",
+            "updatedAt": "2026-07-01T00:00:00.000Z"
+          },
+          {
+            "reviewId": "R-002",
+            "sourceReviewId": "sample-002",
+            "rating": 2,
+            "title": "Free trial charged immediately",
+            "body": "The app said free trial but charged me right away. I cannot find where to cancel.",
+            "version": "1.2.0",
+            "updatedAt": "2026-07-02T00:00:00.000Z"
+          }
+        ],
+        "conflictingReviews": [
+          {
+            "reviewId": "R-006",
+            "sourceReviewId": "sample-006",
+            "rating": 5,
+            "title": "Great guided workouts",
+            "body": "I love the short workouts and the reminders. Subscription worked fine for me.",
+            "version": "1.3.0",
+            "updatedAt": "2026-07-06T00:00:00.000Z"
+          }
+        ]
+      },
+      {
+        "issueId": "F-002",
+        "title": "训练过程崩溃与入口可达性下降",
+        "summary": "用户反馈训练视频崩溃导致进度丢失，同时中英文评论都提到入口难找或页面加载异常。",
+        "severity": "medium",
+        "confidence": "medium",
+        "supportingReviewIds": ["R-003"],
+        "conflictingReviewIds": ["R-007"],
+        "supportCount": 1,
+        "supportingReviews": [
+          {
+            "reviewId": "R-003",
+            "sourceReviewId": "sample-003",
+            "rating": 1,
+            "title": "Workout crashed",
+            "body": "The workout video crashes after warm up, and my progress is lost every time.",
+            "version": "1.2.1",
+            "updatedAt": "2026-07-03T00:00:00.000Z"
+          }
+        ],
+        "conflictingReviews": []
+      }
+    ],
+    "warnings": []
+  },
+  "productPlanning": {
+    "status": "success",
+    "model": "sample-cache",
+    "inputIssueCount": 2,
+    "versionPlans": [
+      {
+        "versionPlanId": "VP-001",
+        "versionName": "V1.1",
+        "objective": "优先恢复付费权益可信度，降低订阅相关差评。",
+        "priority": "high",
+        "includedIssueIds": ["F-001"],
+        "rationale": "订阅付费直接影响收入和信任，且有多条低评分证据支持。"
+      },
+      {
+        "versionPlanId": "VP-002",
+        "versionName": "V1.2",
+        "objective": "改善训练过程稳定性和入口可达性。",
+        "priority": "medium",
+        "includedIssueIds": ["F-002"],
+        "rationale": "稳定性和入口问题影响核心训练体验，但样本量少于订阅问题。"
+      }
+    ],
+    "requirements": [
+      {
+        "requirementId": "REQ-001",
+        "title": "付费权益即时恢复与状态提示",
+        "background": "低评分用户反馈付费后课程仍被锁定或取消入口难找。",
+        "userProblem": "用户完成付费后无法确认权益是否生效，也不知道如何恢复购买或取消试用。",
+        "productGoal": "让付费用户能够立即访问购买内容，并清楚知道当前订阅状态。",
+        "proposedSolution": "在购买完成、启动和课程页进入时刷新权益状态，并展示恢复购买、订阅状态和取消指引入口。",
+        "inScope": ["权益刷新", "恢复购买入口", "订阅状态提示"],
+        "outOfScope": ["价格体系重设计", "退款审批流程"],
+        "acceptanceCriteria": ["成功购买后无需重启即可访问已购训练计划。", "权益异常时展示恢复购买入口和可理解错误信息。"],
+        "priority": "high",
+        "risks": ["支付平台回调延迟可能导致权益状态短暂不一致。"],
+        "sourceIssueIds": ["F-001"],
+        "sourceReviewIds": ["R-001", "R-002"],
+        "sourceReviews": [
+          {
+            "reviewId": "R-001",
+            "sourceReviewId": "sample-001",
+            "rating": 1,
+            "title": "Subscription still locked",
+            "body": "I paid for the yearly plan but the workouts are still locked. Restore purchase does not help.",
+            "version": "1.2.0",
+            "updatedAt": "2026-07-01T00:00:00.000Z"
+          },
+          {
+            "reviewId": "R-002",
+            "sourceReviewId": "sample-002",
+            "rating": 2,
+            "title": "Free trial charged immediately",
+            "body": "The app said free trial but charged me right away. I cannot find where to cancel.",
+            "version": "1.2.0",
+            "updatedAt": "2026-07-02T00:00:00.000Z"
+          }
+        ],
+        "traceability": [
+          {
+            "reviewId": "R-001",
+            "issueId": "F-001",
+            "requirementId": "REQ-001"
+          },
+          {
+            "reviewId": "R-002",
+            "issueId": "F-001",
+            "requirementId": "REQ-001"
+          }
+        ]
+      },
+      {
+        "requirementId": "REQ-002",
+        "title": "训练视频异常恢复",
+        "background": "用户反馈训练视频崩溃后进度丢失。",
+        "userProblem": "训练中断会让用户丢失进度并降低继续训练意愿。",
+        "productGoal": "减少训练中断损失，让用户可以从中断点恢复。",
+        "proposedSolution": "记录训练进度检查点，并在视频异常退出后提供继续训练入口。",
+        "inScope": ["进度检查点", "异常恢复入口"],
+        "outOfScope": ["视频内容重制"],
+        "acceptanceCriteria": ["视频异常退出后再次进入可从最近检查点继续。"],
+        "priority": "medium",
+        "risks": ["不同设备的视频播放器错误码不一致。"],
+        "sourceIssueIds": ["F-002"],
+        "sourceReviewIds": ["R-003"],
+        "sourceReviews": [
+          {
+            "reviewId": "R-003",
+            "sourceReviewId": "sample-003",
+            "rating": 1,
+            "title": "Workout crashed",
+            "body": "The workout video crashes after warm up, and my progress is lost every time.",
+            "version": "1.2.1",
+            "updatedAt": "2026-07-03T00:00:00.000Z"
+          }
+        ],
+        "traceability": [
+          {
+            "reviewId": "R-003",
+            "issueId": "F-002",
+            "requirementId": "REQ-002"
+          }
+        ]
+      }
+    ],
+    "warnings": []
+  },
+  "testGeneration": {
+    "status": "success",
+    "model": "sample-cache",
+    "inputRequirementCount": 2,
+    "testCases": [
+      {
+        "testCaseId": "TC-001",
+        "title": "购买成功后即时解锁训练计划",
+        "requirementId": "REQ-001",
+        "sourceIssueIds": ["F-001"],
+        "sourceReviewIds": ["R-001"],
+        "priority": "high",
+        "preconditions": ["测试账号未购买年度计划，支付沙箱可用。"],
+        "steps": ["使用测试账号购买年度计划。", "购买成功后不重启应用，直接打开被锁定的训练计划。", "进入订阅状态区域检查权益状态和恢复购买入口。"],
+        "expectedResult": "训练计划立即可访问，订阅状态显示已生效，用户不需要重复购买。",
+        "testType": "functional",
+        "status": "generated"
+      },
+      {
+        "testCaseId": "TC-002",
+        "title": "支付回调延迟时展示恢复购买路径",
+        "requirementId": "REQ-001",
+        "sourceIssueIds": ["F-001"],
+        "sourceReviewIds": ["R-002"],
+        "priority": "high",
+        "preconditions": ["测试账号处于购买成功但权益回调延迟的模拟状态。"],
+        "steps": ["完成试用或订阅购买并模拟权益接口短暂失败。", "打开原本付费锁定的训练计划。", "点击恢复购买并等待权益状态刷新。"],
+        "expectedResult": "页面展示可理解的权益同步提示，恢复购买后内容解锁，且不会误导用户重复扣费。",
+        "testType": "exception",
+        "status": "generated"
+      },
+      {
+        "testCaseId": "TC-003",
+        "title": "训练视频崩溃后从检查点恢复",
+        "requirementId": "REQ-002",
+        "sourceIssueIds": ["F-002"],
+        "sourceReviewIds": ["R-003"],
+        "priority": "medium",
+        "preconditions": ["选择包含视频训练的计划，并完成热身阶段。"],
+        "steps": ["播放训练视频至热身结束后。", "模拟播放器异常退出。", "重新进入同一训练计划并点击继续训练。"],
+        "expectedResult": "应用展示继续训练入口，并从最近检查点恢复，不丢失已完成进度。",
+        "testType": "exception",
+        "status": "generated"
+      }
+    ],
+    "warnings": []
+  },
+  "traceability": {
+    "status": "complete",
+    "metrics": {
+      "validReviewCount": 3,
+      "issueThemeCount": 2,
+      "requirementCount": 2,
+      "testCaseCount": 3,
+      "completeRequirementCount": 2,
+      "traceabilityRate": 1
+    },
+    "requirements": [
+      {
+        "requirementId": "REQ-001",
+        "requirementTitle": "付费权益即时恢复与状态提示",
+        "isComplete": true,
+        "warnings": [],
+        "paths": [
+          {
+            "reviewId": "R-001",
+            "reviewTitle": "Subscription still locked",
+            "reviewBody": "I paid for the yearly plan but the workouts are still locked. Restore purchase does not help.",
+            "issueId": "F-001",
+            "issueTitle": "订阅支付后权益未生效",
+            "requirementId": "REQ-001",
+            "requirementTitle": "付费权益即时恢复与状态提示",
+            "testCaseId": "TC-001",
+            "testCaseTitle": "购买成功后即时解锁训练计划"
+          },
+          {
+            "reviewId": "R-002",
+            "reviewTitle": "Free trial charged immediately",
+            "reviewBody": "The app said free trial but charged me right away. I cannot find where to cancel.",
+            "issueId": "F-001",
+            "issueTitle": "订阅支付后权益未生效",
+            "requirementId": "REQ-001",
+            "requirementTitle": "付费权益即时恢复与状态提示",
+            "testCaseId": "TC-002",
+            "testCaseTitle": "支付回调延迟时展示恢复购买路径"
+          }
+        ]
+      },
+      {
+        "requirementId": "REQ-002",
+        "requirementTitle": "训练视频异常恢复",
+        "isComplete": true,
+        "warnings": [],
+        "paths": [
+          {
+            "reviewId": "R-003",
+            "reviewTitle": "Workout crashed",
+            "reviewBody": "The workout video crashes after warm up, and my progress is lost every time.",
+            "issueId": "F-002",
+            "issueTitle": "训练过程崩溃与入口可达性下降",
+            "requirementId": "REQ-002",
+            "requirementTitle": "训练视频异常恢复",
+            "testCaseId": "TC-003",
+            "testCaseTitle": "训练视频崩溃后从检查点恢复"
+          }
+        ]
+      }
+    ],
+    "warnings": []
+  },
+  "nextSteps": [
+    "这是缓存示例，可用于无 API Key 或模型失败时讲解完整结果形态。",
+    "正式提交时仍应配置模型并运行实时分析。",
+    "现场 Demo 可以先加载示例数据，再查看示例分析结果作为兜底。"
+  ]
+}

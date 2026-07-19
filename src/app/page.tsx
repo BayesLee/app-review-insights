@@ -6,53 +6,50 @@ import {
   AlertCircle,
   ArrowRight,
   CheckCircle2,
+  Database,
+  Download,
   FileText,
+  FileUp,
   FlaskConical,
   Layers3,
   Loader2,
-  Network,
   ShieldCheck,
   Sparkles
 } from "lucide-react";
 import { QUICK_ANALYSIS_GOALS } from "@/lib/analysis-goal";
+import { buildJsonReport, buildMarkdownReport } from "@/lib/report/export";
 import type { PipelineResult } from "@/lib/reviews/types";
 
 const defaultAppUrl = "https://apps.apple.com/us/app/workout-for-women-home-gym/id839285684";
 
 const stages = [
   {
-    key: "scope",
-    title: "分析范围规划",
-    detail: "解析 App 链接，并将分析目标转化为可执行的数据范围。",
-    icon: Network
-  },
-  {
     key: "collection",
-    title: "评论采集",
-    detail: "获取美国区 App Store 评论，并保留原始证据用于追溯。",
+    title: "评论获取",
+    detail: "从 App Store、JSON、CSV 或示例数据获取评论。",
     icon: Activity
   },
   {
     key: "cleaning",
-    title: "清洗去重",
+    title: "数据清洗",
     detail: "统一字段、去除重复数据，并保留确定性统计结果。",
     icon: Layers3
   },
   {
     key: "model",
-    title: "模型分析",
+    title: "AI 主题分析",
     detail: "动态发现主题、合并相似问题，并标记不确定性。",
     icon: Sparkles
   },
   {
     key: "prd",
-    title: "PRD 与版本规划",
+    title: "版本规划与 PRD",
     detail: "将有证据支撑的洞察转化为需求、优先级和验收标准。",
     icon: FileText
   },
   {
     key: "tests",
-    title: "测试用例设计",
+    title: "测试用例生成",
     detail: "生成与需求和源评论相互关联的测试用例。",
     icon: FlaskConical
   },
@@ -61,8 +58,20 @@ const stages = [
     title: "证据链校验",
     detail: "移除无证据结论，或将其明确标记为假设。",
     icon: ShieldCheck
+  },
+  {
+    key: "done",
+    title: "完成",
+    detail: "支持导出 JSON 和 Markdown 报告用于提交或演示。",
+    icon: CheckCircle2
   }
 ] as const;
+
+type ImportSourcePayload = {
+  type: "json-file" | "csv-file" | "sample-data";
+  fileName?: string;
+  content: string;
+};
 
 type StageStatus = "done" | "running" | "pending" | "planned" | "skipped" | "error";
 
@@ -78,8 +87,10 @@ const statusText: Record<StageStatus, string> = {
 export default function Home() {
   const [appUrl, setAppUrl] = useState(defaultAppUrl);
   const [goal, setGoal] = useState("");
+  const [importSource, setImportSource] = useState<ImportSourcePayload | null>(null);
   const [result, setResult] = useState<PipelineResult | null>(null);
   const [isLoading, setIsLoading] = useState(false);
+  const [isLoadingSampleOutput, setIsLoadingSampleOutput] = useState(false);
   const [error, setError] = useState<string | null>(null);
 
   const maxRatingCount = useMemo(() => {
@@ -102,7 +113,8 @@ export default function Home() {
           "Content-Type": "application/json"
         },
         body: JSON.stringify({
-          appUrl,
+          appUrl: importSource ? undefined : appUrl,
+          importSource: importSource ?? undefined,
           goal,
           maxPages: 4
         })
@@ -122,21 +134,106 @@ export default function Home() {
     }
   }
 
+  async function handleFileChange(event: React.ChangeEvent<HTMLInputElement>) {
+    const file = event.target.files?.[0];
+
+    if (!file) {
+      return;
+    }
+
+    const lowerName = file.name.toLowerCase();
+    const type = lowerName.endsWith(".json") ? "json-file" : lowerName.endsWith(".csv") ? "csv-file" : null;
+
+    if (!type) {
+      setError("仅支持 JSON 或 CSV 评论文件。");
+      event.target.value = "";
+      return;
+    }
+
+    const content = await file.text();
+    setImportSource({ type, fileName: file.name, content });
+    setAppUrl("");
+    setResult(null);
+    setError(null);
+  }
+
+  function handleAppUrlChange(value: string) {
+    setAppUrl(value);
+
+    if (value.trim()) {
+      setImportSource(null);
+    }
+  }
+
+  function handleLoadSampleData() {
+    setImportSource({
+      type: "sample-data",
+      fileName: "sample_data/reviews.json",
+      content: ""
+    });
+    setAppUrl("");
+    setResult(null);
+    setError(null);
+  }
+
+  function handleClearImportSource() {
+    setImportSource(null);
+    setAppUrl(defaultAppUrl);
+  }
+
+  async function handleLoadSampleOutput() {
+    setIsLoadingSampleOutput(true);
+    setError(null);
+
+    try {
+      const response = await fetch("/api/sample-analysis");
+      const data = (await response.json()) as PipelineResult | { error?: string };
+
+      if (!response.ok) {
+        throw new Error("error" in data && data.error ? data.error : "示例分析结果读取失败。");
+      }
+
+      setResult(data as PipelineResult);
+    } catch (sampleError) {
+      setError(sampleError instanceof Error ? sampleError.message : "示例分析结果读取失败。");
+    } finally {
+      setIsLoadingSampleOutput(false);
+    }
+  }
+
+  function handleExport(format: "json" | "markdown") {
+    if (!result) {
+      return;
+    }
+
+    const content =
+      format === "json" ? JSON.stringify(buildJsonReport(result), null, 2) : buildMarkdownReport(result);
+    const blob = new Blob([content], {
+      type: format === "json" ? "application/json;charset=utf-8" : "text/markdown;charset=utf-8"
+    });
+    const url = URL.createObjectURL(blob);
+    const anchor = document.createElement("a");
+    anchor.href = url;
+    anchor.download = `app-review-insights-${format === "json" ? "report.json" : "report.md"}`;
+    anchor.click();
+    URL.revokeObjectURL(url);
+  }
+
   function getStageStatus(index: number): StageStatus {
-    if (error && index <= 2) {
-      return index === 1 ? "error" : "pending";
+    if (error) {
+      return index === 0 ? "error" : "pending";
     }
 
     if (isLoading) {
-      return index <= 4 ? "running" : "pending";
+      return index <= 5 ? "running" : "pending";
     }
 
     if (result) {
-      if (index <= 2) {
+      if (index <= 1) {
         return "done";
       }
 
-      if (index === 3) {
+      if (index === 2) {
         if (result.issueDiscovery?.status === "success") {
           return "done";
         }
@@ -148,7 +245,7 @@ export default function Home() {
         return "error";
       }
 
-      if (index === 4) {
+      if (index === 3) {
         if (result.productPlanning?.status === "success") {
           return "done";
         }
@@ -160,7 +257,23 @@ export default function Home() {
         return "error";
       }
 
-      return "planned";
+      if (index === 4) {
+        if (result.testGeneration?.status === "success") {
+          return "done";
+        }
+
+        if (result.testGeneration?.status === "skipped") {
+          return "skipped";
+        }
+
+        return "error";
+      }
+
+      if (index === 5) {
+        return result.traceability?.status === "complete" ? "done" : "skipped";
+      }
+
+      return "done";
     }
 
     return "pending";
@@ -182,8 +295,39 @@ export default function Home() {
                 id="appUrl"
                 className="input"
                 value={appUrl}
-                onChange={(event) => setAppUrl(event.target.value)}
+                disabled={Boolean(importSource)}
+                onChange={(event) => handleAppUrlChange(event.target.value)}
               />
+            </div>
+
+            <div className="field">
+              <label htmlFor="reviewFile">JSON / CSV 评论文件</label>
+              <div className="file-actions">
+                <label className="secondary-action" htmlFor="reviewFile">
+                  <FileUp size={16} />
+                  上传文件
+                </label>
+                <input
+                  id="reviewFile"
+                  className="sr-only"
+                  type="file"
+                  accept=".json,.csv,application/json,text/csv"
+                  onChange={handleFileChange}
+                />
+                <button className="secondary-action" type="button" onClick={handleLoadSampleData}>
+                  <Database size={16} />
+                  加载示例数据
+                </button>
+              </div>
+              <div className="source-chip">
+                <span>当前数据来源</span>
+                <strong>{describeCurrentSource(importSource)}</strong>
+                {importSource ? (
+                  <button type="button" onClick={handleClearImportSource}>
+                    清除
+                  </button>
+                ) : null}
+              </div>
             </div>
 
             <div className="field">
@@ -261,8 +405,8 @@ export default function Home() {
                 <h2>评论到路线图工作台</h2>
                 <p>
                   {result
-                    ? `已采集 ${result.collection.rawCount} 条原始评论，清洗出 ${result.cleaning.cleanedCount} 条有效评论，并返回服务端 AI 主题分析与 PRD 生成状态。`
-                    : "当前阶段已接入真实评论采集、清洗去重、基础统计、AI 主题发现、版本规划和 PRD 生成。测试用例将在后续阶段继续接入。"}
+                    ? `已采集 ${result.collection.rawCount} 条原始评论，清洗出 ${result.cleaning.cleanedCount} 条有效评论，并返回服务端 AI 主题、PRD、测试用例和追溯审计状态。`
+                    : "当前阶段已接入真实评论采集、JSON/CSV 导入、清洗去重、基础统计、AI 主题发现、版本规划、PRD、测试用例、追溯审计和报告导出。"}
                 </p>
               </div>
               <div className="badge">
@@ -275,6 +419,26 @@ export default function Home() {
               <div className="error-box">
                 <AlertCircle size={18} />
                 <span>{error}</span>
+                <button className="inline-button" type="button" onClick={handleLoadSampleOutput} disabled={isLoadingSampleOutput}>
+                  查看示例分析结果
+                </button>
+              </div>
+            ) : null}
+
+            {result?.isSampleOutput ? (
+              <div className="sample-banner">
+                <AlertCircle size={18} />
+                <span>{result.sampleNotice ?? "示例缓存结果，不是本次实时模型输出。"}</span>
+              </div>
+            ) : null}
+
+            {result && hasRealtimeModelFailure(result) ? (
+              <div className="sample-banner">
+                <AlertCircle size={18} />
+                <span>实时模型链路未完整成功，可以查看缓存示例了解最终报告形态。</span>
+                <button className="inline-button" type="button" onClick={handleLoadSampleOutput} disabled={isLoadingSampleOutput}>
+                  查看示例分析结果
+                </button>
               </div>
             ) : null}
 
@@ -296,6 +460,10 @@ export default function Home() {
                 <span>证据充分度</span>
                 <strong>{result?.scope.evidenceLevel ?? "待运行"}</strong>
               </div>
+              <div className="metric">
+                <span>数据来源</span>
+                <strong>{result?.scope.dataSource.label ?? "待选择"}</strong>
+              </div>
             </div>
           </div>
 
@@ -316,6 +484,13 @@ export default function Home() {
                     <div>
                       <dt>评论区服</dt>
                       <dd>美国区</dd>
+                    </div>
+                    <div>
+                      <dt>数据来源</dt>
+                      <dd>
+                        {result.scope.dataSource.label}
+                        {result.scope.dataSource.fileName ? ` · ${result.scope.dataSource.fileName}` : ""}
+                      </dd>
                     </div>
                     <div>
                       <dt>采集页数</dt>
@@ -446,6 +621,33 @@ export default function Home() {
             </article>
 
             <article className="result-panel wide">
+              <h3>测试用例</h3>
+              {result?.testGeneration ? (
+                <TestGenerationPanel result={result.testGeneration} />
+              ) : (
+                <p className="empty-state">PRD 需求生成成功后，这里会展示可追溯到需求和评论的结构化测试用例。</p>
+              )}
+            </article>
+
+            <article className="result-panel wide">
+              <h3>追溯关系</h3>
+              {result?.traceability ? (
+                <TraceabilityPanel result={result.traceability} />
+              ) : (
+                <p className="empty-state">测试用例生成后，这里会展示评论、问题、需求和测试用例之间的完整映射。</p>
+              )}
+            </article>
+
+            <article className="result-panel wide">
+              <h3>导出报告</h3>
+              {result ? (
+                <ExportPanel onExport={handleExport} />
+              ) : (
+                <p className="empty-state">分析完成后可以导出完整 JSON 报告或 Markdown 报告。</p>
+              )}
+            </article>
+
+            <article className="result-panel wide">
               <h3>评论样例</h3>
               {result ? (
                 <div className="review-list">
@@ -471,7 +673,7 @@ export default function Home() {
               <h3>Agent 策略</h3>
               <p>
                 确定性代码负责采集、字段归一、去重、统计和校验；模型负责主题发现、
-                问题合并、版本规划和需求草拟。
+                问题合并、版本规划、需求草拟和测试设计。
               </p>
             </article>
 
@@ -526,6 +728,32 @@ function shortId(value: string): string {
 
 function hasKnownVersions(result: PipelineResult): boolean {
   return result.metrics.topVersions.some((item) => item.version !== "unknown");
+}
+
+function describeCurrentSource(importSource: ImportSourcePayload | null): string {
+  if (!importSource) {
+    return "App Store";
+  }
+
+  if (importSource.type === "json-file") {
+    return `JSON 文件${importSource.fileName ? ` · ${importSource.fileName}` : ""}`;
+  }
+
+  if (importSource.type === "csv-file") {
+    return `CSV 文件${importSource.fileName ? ` · ${importSource.fileName}` : ""}`;
+  }
+
+  return "示例数据 · sample_data/reviews.json";
+}
+
+function hasRealtimeModelFailure(result: PipelineResult): boolean {
+  if (result.isSampleOutput) {
+    return false;
+  }
+
+  return [result.issueDiscovery?.status, result.productPlanning?.status, result.testGeneration?.status].some(
+    (status) => status === "error"
+  );
 }
 
 function IssueDiscoveryPanel({ result }: { result: NonNullable<PipelineResult["issueDiscovery"]> }) {
@@ -805,6 +1033,203 @@ function ProductPlanningStatus({ result }: { result: NonNullable<PipelineResult[
   );
 }
 
+function TestGenerationPanel({ result }: { result: NonNullable<PipelineResult["testGeneration"]> }) {
+  return (
+    <div className="planning-panel">
+      <div className="ai-meta-grid">
+        <div>
+          <span>实际模型</span>
+          <strong>{result.model ?? "未配置"}</strong>
+        </div>
+        <div>
+          <span>输入需求</span>
+          <strong>{result.inputRequirementCount}</strong>
+        </div>
+        <div>
+          <span>测试用例</span>
+          <strong>{result.testCases.length}</strong>
+        </div>
+        <div>
+          <span>生成状态</span>
+          <strong>{translateStatus(result.status)}</strong>
+        </div>
+      </div>
+
+      {result.status === "error" ? (
+        <div className="error-box inline-error">
+          <AlertCircle size={18} />
+          <span>{result.error}</span>
+        </div>
+      ) : null}
+
+      {result.status === "skipped" ? (
+        <p className="source-line">{result.warnings[0] ?? "测试用例生成已跳过。"}</p>
+      ) : null}
+
+      {result.warnings.length > 0 && result.status !== "skipped" ? (
+        <div className="warning-list">
+          {result.warnings.map((warning) => (
+            <span key={warning}>{warning}</span>
+          ))}
+        </div>
+      ) : null}
+
+      {result.status === "success" && result.testCases.length === 0 ? (
+        <p className="empty-state">没有通过证据校验的测试用例。</p>
+      ) : null}
+
+      {result.testCases.length > 0 ? (
+        <div className="testcase-list">
+          {result.testCases.map((testCase) => (
+            <article className="testcase-card" key={testCase.testCaseId}>
+              <div className="theme-head">
+                <div>
+                  <span className="issue-id">{testCase.testCaseId}</span>
+                  <h4>{testCase.title}</h4>
+                </div>
+                <div className="tag-row compact-tags">
+                  <span className={`tag severity-${testCase.priority}`}>优先级：{translateLevel(testCase.priority)}</span>
+                  <span className="tag">{translateTestType(testCase.testType)}</span>
+                  <span className="tag">需求 {testCase.requirementId}</span>
+                </div>
+              </div>
+
+              <div className="scope-grid">
+                <ListBlock title="前置条件" values={testCase.preconditions} emptyText="无特殊前置条件。" />
+                <div className="list-block">
+                  <h5>预期结果</h5>
+                  <p>{testCase.expectedResult}</p>
+                </div>
+              </div>
+
+              <ListBlock title="测试步骤" values={testCase.steps} />
+
+              <div className="tag-row">
+                {testCase.sourceIssueIds.map((issueId) => (
+                  <span className="tag" key={issueId}>
+                    {issueId}
+                  </span>
+                ))}
+                {testCase.sourceReviewIds.map((reviewId) => (
+                  <span className="tag" key={reviewId}>
+                    {reviewId}
+                  </span>
+                ))}
+              </div>
+            </article>
+          ))}
+        </div>
+      ) : null}
+    </div>
+  );
+}
+
+function TraceabilityPanel({ result }: { result: NonNullable<PipelineResult["traceability"]> }) {
+  return (
+    <div className="planning-panel">
+      <div className="trace-metrics">
+        <div>
+          <span>有效评论数量</span>
+          <strong>{result.metrics.validReviewCount}</strong>
+        </div>
+        <div>
+          <span>问题主题数量</span>
+          <strong>{result.metrics.issueThemeCount}</strong>
+        </div>
+        <div>
+          <span>产品需求数量</span>
+          <strong>{result.metrics.requirementCount}</strong>
+        </div>
+        <div>
+          <span>测试用例数量</span>
+          <strong>{result.metrics.testCaseCount}</strong>
+        </div>
+        <div>
+          <span>追溯完整率</span>
+          <strong>{Math.round(result.metrics.traceabilityRate * 100)}%</strong>
+        </div>
+      </div>
+
+      {result.warnings.length > 0 ? (
+        <div className="warning-list">
+          {result.warnings.map((warning) => (
+            <span key={warning}>{warning}</span>
+          ))}
+        </div>
+      ) : null}
+
+      {result.requirements.length > 0 ? (
+        <div className="trace-list">
+          {result.requirements.map((requirement) => (
+            <details className="trace-card" key={requirement.requirementId} open>
+              <summary>
+                <span>
+                  {requirement.requirementId} · {requirement.requirementTitle}
+                </span>
+                <strong>{requirement.isComplete ? "证据链完整" : "证据链不完整"}</strong>
+              </summary>
+
+              {requirement.warnings.length > 0 ? (
+                <div className="warning-list compact-warning">
+                  {requirement.warnings.map((warning) => (
+                    <span key={warning}>{warning}</span>
+                  ))}
+                </div>
+              ) : null}
+
+              {requirement.paths.length > 0 ? (
+                <div className="trace-path-list">
+                  {requirement.paths.map((path) => (
+                    <div
+                      className="trace-path"
+                      key={`${path.reviewId}-${path.issueId}-${path.requirementId}-${path.testCaseId}`}
+                    >
+                      <div className="trace-chain">
+                        <strong>评论 {path.reviewId}</strong>
+                        <span>→</span>
+                        <strong>问题 {path.issueId}</strong>
+                        <span>→</span>
+                        <strong>需求 {path.requirementId}</strong>
+                        <span>→</span>
+                        <strong>测试用例 {path.testCaseId}</strong>
+                      </div>
+                      <p className="review-body">{path.reviewBody}</p>
+                      <div className="review-meta">
+                        <span>{path.issueTitle}</span>
+                        <span>{path.testCaseTitle}</span>
+                      </div>
+                    </div>
+                  ))}
+                </div>
+              ) : (
+                <p className="empty-state">当前需求没有完整的评论 → 问题 → 需求 → 测试用例映射。</p>
+              )}
+            </details>
+          ))}
+        </div>
+      ) : (
+        <p className="empty-state">暂无产品需求，因此没有可计算的完整追溯链。</p>
+      )}
+    </div>
+  );
+}
+
+function ExportPanel({ onExport }: { onExport: (format: "json" | "markdown") => void }) {
+  return (
+    <div className="export-panel">
+      <button className="secondary-action strong-action" type="button" onClick={() => onExport("json")}>
+        <Download size={16} />
+        导出 JSON 报告
+      </button>
+      <button className="secondary-action strong-action" type="button" onClick={() => onExport("markdown")}>
+        <Download size={16} />
+        导出 Markdown 报告
+      </button>
+      <p className="source-line">导出内容只来自当前页面结果，不包含 API Key 或环境变量。</p>
+    </div>
+  );
+}
+
 function ListBlock({
   title,
   values,
@@ -862,4 +1287,25 @@ function translateLevel(level: "high" | "medium" | "low"): string {
   };
 
   return map[level];
+}
+
+function translateStatus(status: "success" | "skipped" | "error"): string {
+  const map = {
+    success: "成功",
+    skipped: "跳过",
+    error: "异常"
+  };
+
+  return map[status];
+}
+
+function translateTestType(type: "functional" | "boundary" | "exception" | "usability"): string {
+  const map = {
+    functional: "正常流程",
+    boundary: "边界场景",
+    exception: "异常场景",
+    usability: "易用性"
+  };
+
+  return map[type];
 }

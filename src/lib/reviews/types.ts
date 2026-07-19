@@ -35,6 +35,12 @@ export type CollectionResult = {
   warnings: string[];
 };
 
+export type DataSourceSummary = {
+  type: "app-store" | "json-file" | "csv-file" | "sample-data";
+  label: string;
+  fileName?: string;
+};
+
 export type CleaningReport = {
   rawCount: number;
   cleanedCount: number;
@@ -59,6 +65,7 @@ export type ScopeSummary = {
   appId: string;
   storefront: "us";
   maxPages: number;
+  dataSource: DataSourceSummary;
   focusAreas: string[];
   evidenceLevel: "充足" | "一般" | "不足";
   notes: string[];
@@ -66,6 +73,8 @@ export type ScopeSummary = {
 
 import type { IssueDiscoveryResult } from "@/lib/ai/issue-discovery";
 import type { ProductPlanningResult } from "@/lib/ai/product-planning";
+import type { TestGenerationResult } from "@/lib/ai/test-generation";
+import type { TraceabilityResult } from "@/lib/traceability";
 
 export type PipelineResult = {
   scope: ScopeSummary;
@@ -78,5 +87,9 @@ export type PipelineResult = {
   sampleReviews: CleanedReview[];
   issueDiscovery?: IssueDiscoveryResult;
   productPlanning?: ProductPlanningResult;
+  testGeneration?: TestGenerationResult;
+  traceability?: TraceabilityResult;
+  isSampleOutput?: boolean;
+  sampleNotice?: string;
   nextSteps: string[];
 };
