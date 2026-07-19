@@ -2,13 +2,13 @@ import type { Metadata } from "next";
 import "./globals.css";
 
 export const metadata: Metadata = {
-  title: "App Review Insight Agent",
-  description: "Turn App Store reviews into grounded version plans, PRDs, and test cases."
+  title: "App 评论洞察 Agent",
+  description: "将 App Store 评论转化为有证据支撑的版本计划、PRD 和测试用例。"
 };
 
 export default function RootLayout({ children }: Readonly<{ children: React.ReactNode }>) {
   return (
-    <html lang="en">
+    <html lang="zh-CN">
       <body>{children}</body>
     </html>
   );
