@@ -1,5 +1,6 @@
 import OpenAI from "openai";
 import { z } from "zod";
+import { resolveAnalysisGoal } from "../analysis-goal";
 import type { CleanedReview } from "@/lib/reviews/types";
 
 const severities = ["high", "medium", "low"] as const;
@@ -103,8 +104,9 @@ export async function discoverIssueThemes(input: {
   }
 
   try {
+    const goal = resolveAnalysisGoal(input.goal);
     const messages = buildIssueDiscoveryMessages({
-      goal: input.goal,
+      goal,
       lowRatingReviews: prepared.lowRatingReviews,
       conflictCandidateReviews: prepared.conflictCandidateReviews
     });
@@ -214,13 +216,14 @@ export function validateModelThemes(
   return { themes, warnings };
 }
 
-function buildIssueDiscoveryMessages(input: {
+export function buildIssueDiscoveryMessages(input: {
   goal: string;
   lowRatingReviews: ReviewEvidence[];
   conflictCandidateReviews: ReviewEvidence[];
 }): ChatMessage[] {
+  const analysisGoal = resolveAnalysisGoal(input.goal);
   const payload = {
-    analysisGoal: input.goal || "发现 1-2 星评论中反复出现的真实用户问题。",
+    analysisGoal,
     lowRatingReviews: input.lowRatingReviews.map(compactReview),
     conflictCandidateReviews: input.conflictCandidateReviews.map(compactReview)
   };
@@ -233,7 +236,7 @@ function buildIssueDiscoveryMessages(input: {
     },
     {
       role: "user",
-      content: `请分析以下 App Store 评论。\n\n要求：\n1. 主题必须从 1-2 星评论中归纳，主题名称由当前评论动态生成。\n2. supportingReviewIds 只能引用 lowRatingReviews 中的 reviewId。\n3. conflictingReviewIds 只能引用 conflictCandidateReviews 中表达相反体验的 reviewId。\n4. 如果证据不足，请少输出主题，不要猜测。\n5. 严格返回 JSON，不要 Markdown，不要额外解释。\n\nJSON 结构必须为：\n{"themes":[{"issueId":"F-001","title":"问题标题","summary":"问题总结","severity":"high | medium | low","confidence":"high | medium | low","supportingReviewIds":["R-001"],"conflictingReviewIds":["R-010"]}]}\n\n输入数据：\n${JSON.stringify(payload)}`
+      content: `请分析以下 App Store 评论。\n\n本次分析目标：${analysisGoal}\n\n要求：\n1. 只能围绕“本次分析目标”归纳主题，主题必须从当前评论证据中动态生成。\n2. 如果评论证据不支持用户目标中的某类问题，请不要为了贴合目标而虚构主题。\n3. 主题必须从 1-2 星评论中归纳，主题名称由当前评论动态生成。\n4. supportingReviewIds 只能引用 lowRatingReviews 中的 reviewId。\n5. conflictingReviewIds 只能引用 conflictCandidateReviews 中表达相反体验的 reviewId。\n6. 如果证据不足，请少输出主题，不要猜测。\n7. 严格返回 JSON，不要 Markdown，不要额外解释。\n\nJSON 结构必须为：\n{"themes":[{"issueId":"F-001","title":"问题标题","summary":"问题总结","severity":"high | medium | low","confidence":"high | medium | low","supportingReviewIds":["R-001"],"conflictingReviewIds":["R-010"]}]}\n\n输入数据：\n${JSON.stringify(payload)}`
     }
   ];
 }

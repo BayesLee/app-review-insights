@@ -1,3 +1,4 @@
+import { resolveAnalysisGoal } from "../analysis-goal";
 import { cleanReviews, buildReviewMetrics } from "./cleaner";
 import { collectAppStoreReviews, parseAppStoreAppId } from "./collector";
 import type { PipelineResult, ScopeSummary } from "./types";
@@ -16,7 +17,7 @@ export async function runReviewPipeline(input: {
   const cleaning = cleanReviews(collection.reviews);
   const metrics = buildReviewMetrics(cleaning.reviews);
   const scope = buildScopeSummary({
-    goal: input.goal,
+    goal: resolveAnalysisGoal(input.goal),
     appId,
     maxPages,
     cleanedCount: cleaning.reviews.length,
@@ -53,7 +54,7 @@ function buildScopeSummary(input: {
   cleanedCount: number;
   warnings: string[];
 }): ScopeSummary {
-  const goal = input.goal.trim() || "综合分析用户评论中的主要问题和版本规划机会。";
+  const goal = resolveAnalysisGoal(input.goal);
   const focusAreas = inferFocusAreas(goal);
   const evidenceLevel = input.cleanedCount >= 150 ? "充足" : input.cleanedCount >= 50 ? "一般" : "不足";
   const notes = [

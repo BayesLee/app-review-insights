@@ -1,5 +1,6 @@
 import { describe, expect, it } from "vitest";
-import { discoverIssueThemes } from "./issue-discovery";
+import { DEFAULT_ANALYSIS_GOAL } from "../analysis-goal";
+import { buildIssueDiscoveryMessages, discoverIssueThemes, prepareIssueDiscoveryInput } from "./issue-discovery";
 import type { CleanedReview } from "@/lib/reviews/types";
 
 function makeReview(overrides: Partial<CleanedReview>): CleanedReview {
@@ -136,5 +137,61 @@ describe("model-driven issue discovery", () => {
     expect(result.status).toBe("error");
     expect(result.error).toContain("未配置 OPENAI_API_KEY");
     expect(result.themes).toHaveLength(0);
+  });
+
+  it("passes a custom analysis goal into the backend model prompt", async () => {
+    let prompt = "";
+
+    await discoverIssueThemes({
+      reviews: mixedReviews,
+      goal: "重点分析订阅和付费问题",
+      apiKey: "test-key",
+      callModel: async ({ messages }) => {
+        prompt = messages.map((message) => message.content).join("\n");
+        return JSON.stringify({ themes: [] });
+      }
+    });
+
+    expect(prompt).toContain("本次分析目标：重点分析订阅和付费问题");
+    expect(prompt).toContain("\"analysisGoal\":\"重点分析订阅和付费问题\"");
+  });
+
+  it("uses the default analysis goal when the input goal is empty", async () => {
+    let prompt = "";
+
+    await discoverIssueThemes({
+      reviews: mixedReviews,
+      goal: "   ",
+      apiKey: "test-key",
+      callModel: async ({ messages }) => {
+        prompt = messages.map((message) => message.content).join("\n");
+        return JSON.stringify({ themes: [] });
+      }
+    });
+
+    expect(prompt).toContain(`本次分析目标：${DEFAULT_ANALYSIS_GOAL}`);
+    expect(prompt).toContain(`"analysisGoal":"${DEFAULT_ANALYSIS_GOAL}"`);
+  });
+
+  it("builds different prompts for different analysis goals", () => {
+    const prepared = prepareIssueDiscoveryInput(mixedReviews);
+    const subscriptionPrompt = buildIssueDiscoveryMessages({
+      goal: "重点分析订阅和付费问题",
+      lowRatingReviews: prepared.lowRatingReviews,
+      conflictCandidateReviews: prepared.conflictCandidateReviews
+    })
+      .map((message) => message.content)
+      .join("\n");
+    const performancePrompt = buildIssueDiscoveryMessages({
+      goal: "重点分析稳定性与性能问题",
+      lowRatingReviews: prepared.lowRatingReviews,
+      conflictCandidateReviews: prepared.conflictCandidateReviews
+    })
+      .map((message) => message.content)
+      .join("\n");
+
+    expect(subscriptionPrompt).not.toBe(performancePrompt);
+    expect(subscriptionPrompt).toContain("重点分析订阅和付费问题");
+    expect(performancePrompt).toContain("重点分析稳定性与性能问题");
   });
 });

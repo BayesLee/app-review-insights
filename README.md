@@ -42,6 +42,7 @@ MAX_REVIEW_PAGES=4
 ## Current Implementation
 
 - The UI can submit an App Store link and analysis goal to `/api/analyze`.
+- The analysis goal supports free-form input, an empty-input default, and quick goal buttons.
 - The backend parses the app id, requests U.S. storefront review rows, normalizes reviews, removes empty/malformed/duplicate items, and returns basic metrics.
 - The UI displays collection status, cleaned counts, rating distribution, low-rating ratio, data-source limitations, and low-rating review samples.
 - The backend performs model-driven issue discovery on cleaned reviews when `OPENAI_API_KEY` is configured.
@@ -58,6 +59,25 @@ x-apple-store-front: 143441-1,29
 Each request fetches a 50-review page sorted by most recent reviews. The implementation caps online collection to at most 10 pages to avoid abnormal request volume.
 
 Known limitation: this stable endpoint does not return the app version for each review, so version-level analysis is currently marked as a data limitation instead of being inferred or fabricated. A later step should add cached sample data and JSON/CSV import so reviewers can evaluate the app when Apple's external endpoint is unavailable.
+
+## Analysis Goal Control
+
+The analysis goal input controls the model's semantic scope. If the user leaves it empty, the backend uses:
+
+```text
+识别低评分评论中的主要用户问题，并结合高评分评论检查冲突反馈。
+```
+
+The UI provides quick goal buttons:
+
+- 综合问题分析
+- 订阅与付费
+- 稳定性与性能
+- 功能需求
+
+The resolved goal is returned in the response as `scope.goal` and shown in the result area as "本次分析目标".
+
+The goal is inserted into the model prompt in two places: as a visible instruction line and as the `analysisGoal` field in the JSON input payload. The prompt explicitly says the model must stay within the user's goal, but must not invent a theme when the current review evidence does not support that goal.
 
 ## AI Issue Discovery
 

@@ -126,6 +126,35 @@ button {
   box-shadow: 0 0 0 3px rgba(15, 118, 110, 0.14);
 }
 
+.field-hint {
+  margin: 0;
+  color: var(--muted);
+  font-size: 12px;
+  line-height: 1.45;
+}
+
+.quick-goals {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 8px;
+}
+
+.quick-goal {
+  min-height: 34px;
+  border: 1px solid var(--line);
+  border-radius: 6px;
+  padding: 7px 9px;
+  background: #fbfcfa;
+  color: var(--brand-strong);
+  font-size: 13px;
+  font-weight: 700;
+}
+
+.quick-goal:hover {
+  border-color: var(--brand);
+  background: var(--panel-soft);
+}
+
 .primary {
   display: inline-flex;
   align-items: center;
@@ -387,6 +416,19 @@ button {
   margin: 4px 0 0;
   overflow-wrap: anywhere;
   font-weight: 800;
+}
+
+.goal-summary {
+  grid-column: 1 / -1;
+  border: 1px solid var(--line);
+  border-radius: 8px;
+  padding: 12px;
+  background: #fbfcfa;
+}
+
+.goal-summary dd {
+  line-height: 1.55;
+  font-weight: 700;
 }
 
 .compact-grid {

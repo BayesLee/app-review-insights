@@ -14,10 +14,10 @@ import {
   ShieldCheck,
   Sparkles
 } from "lucide-react";
+import { QUICK_ANALYSIS_GOALS } from "@/lib/analysis-goal";
 import type { PipelineResult } from "@/lib/reviews/types";
 
 const defaultAppUrl = "https://apps.apple.com/us/app/workout-for-women-home-gym/id839285684";
-const defaultGoal = "重点分析低评分评论中的订阅转化阻力、训练体验问题和用户流失风险。";
 
 const stages = [
   {
@@ -77,7 +77,7 @@ const statusText: Record<StageStatus, string> = {
 
 export default function Home() {
   const [appUrl, setAppUrl] = useState(defaultAppUrl);
-  const [goal, setGoal] = useState(defaultGoal);
+  const [goal, setGoal] = useState("");
   const [result, setResult] = useState<PipelineResult | null>(null);
   const [isLoading, setIsLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
@@ -180,8 +180,22 @@ export default function Home() {
                 id="goal"
                 className="textarea"
                 value={goal}
+                placeholder={"例如：\n识别当前最严重的用户体验问题\n重点分析订阅和付费问题\n分析用户最希望新增的功能"}
                 onChange={(event) => setGoal(event.target.value)}
               />
+              <p className="field-hint">留空时将使用默认目标，并在结果区展示实际采用的目标。</p>
+              <div className="quick-goals" aria-label="快捷分析目标">
+                {QUICK_ANALYSIS_GOALS.map((quickGoal) => (
+                  <button
+                    key={quickGoal.label}
+                    className="quick-goal"
+                    type="button"
+                    onClick={() => setGoal(quickGoal.value)}
+                  >
+                    {quickGoal.label}
+                  </button>
+                ))}
+              </div>
             </div>
 
             <button className="primary" type="submit" disabled={isLoading}>
@@ -279,6 +293,10 @@ export default function Home() {
               {result ? (
                 <>
                   <dl className="kv-list">
+                    <div className="goal-summary">
+                      <dt>本次分析目标</dt>
+                      <dd>{result.scope.goal}</dd>
+                    </div>
                     <div>
                       <dt>App ID</dt>
                       <dd>{result.scope.appId}</dd>
