@@ -1,7 +1,9 @@
 "use client";
 
+import { useMemo, useState } from "react";
 import {
   Activity,
+  AlertCircle,
   ArrowRight,
   CheckCircle2,
   FileText,
@@ -12,46 +14,129 @@ import {
   ShieldCheck,
   Sparkles
 } from "lucide-react";
+import type { PipelineResult } from "@/lib/reviews/types";
+
+const defaultAppUrl = "https://apps.apple.com/us/app/workout-for-women-home-gym/id839285684";
+const defaultGoal = "重点分析低评分评论中的订阅转化阻力、训练体验问题和用户流失风险。";
 
 const stages = [
   {
+    key: "scope",
     title: "分析范围规划",
     detail: "解析 App 链接，并将分析目标转化为可执行的数据范围。",
     icon: Network
   },
   {
+    key: "collection",
     title: "评论采集",
     detail: "获取美国区 App Store 评论，并保留原始证据用于追溯。",
     icon: Activity
   },
   {
+    key: "cleaning",
     title: "清洗去重",
     detail: "统一字段、去除重复数据，并保留确定性统计结果。",
     icon: Layers3
   },
   {
+    key: "model",
     title: "模型分析",
     detail: "动态发现主题、合并相似问题，并标记不确定性。",
     icon: Sparkles
   },
   {
+    key: "prd",
     title: "PRD 与版本规划",
     detail: "将有证据支撑的洞察转化为需求、优先级和验收标准。",
     icon: FileText
   },
   {
+    key: "tests",
     title: "测试用例设计",
     detail: "生成与需求和源评论相互关联的测试用例。",
     icon: FlaskConical
   },
   {
+    key: "audit",
     title: "证据链校验",
     detail: "移除无证据结论，或将其明确标记为假设。",
     icon: ShieldCheck
   }
-];
+] as const;
+
+type StageStatus = "done" | "running" | "pending" | "planned" | "error";
+
+const statusText: Record<StageStatus, string> = {
+  done: "完成",
+  running: "运行中",
+  pending: "待运行",
+  planned: "待接入",
+  error: "异常"
+};
 
 export default function Home() {
+  const [appUrl, setAppUrl] = useState(defaultAppUrl);
+  const [goal, setGoal] = useState(defaultGoal);
+  const [result, setResult] = useState<PipelineResult | null>(null);
+  const [isLoading, setIsLoading] = useState(false);
+  const [error, setError] = useState<string | null>(null);
+
+  const maxRatingCount = useMemo(() => {
+    if (!result) {
+      return 1;
+    }
+
+    return Math.max(...Object.values(result.metrics.ratingDistribution), 1);
+  }, [result]);
+
+  async function handleSubmit(event: React.FormEvent<HTMLFormElement>) {
+    event.preventDefault();
+    setIsLoading(true);
+    setError(null);
+
+    try {
+      const response = await fetch("/api/analyze", {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json"
+        },
+        body: JSON.stringify({
+          appUrl,
+          goal,
+          maxPages: 4
+        })
+      });
+      const data = (await response.json()) as PipelineResult | { error?: string };
+
+      if (!response.ok) {
+        throw new Error("error" in data && data.error ? data.error : "分析失败，请稍后重试。");
+      }
+
+      setResult(data as PipelineResult);
+    } catch (requestError) {
+      setResult(null);
+      setError(requestError instanceof Error ? requestError.message : "分析失败，请稍后重试。");
+    } finally {
+      setIsLoading(false);
+    }
+  }
+
+  function getStageStatus(index: number): StageStatus {
+    if (error && index <= 2) {
+      return index === 1 ? "error" : "pending";
+    }
+
+    if (isLoading) {
+      return index <= 2 ? "running" : "pending";
+    }
+
+    if (result) {
+      return index <= 2 ? "done" : "planned";
+    }
+
+    return "pending";
+  }
+
   return (
     <main className="shell">
       <div className="workspace">
@@ -61,13 +146,14 @@ export default function Home() {
             <p>把真实用户评论转化为可追溯的产品洞察、版本计划、PRD 和测试用例。</p>
           </div>
 
-          <form className="form">
+          <form className="form" onSubmit={handleSubmit}>
             <div className="field">
               <label htmlFor="appUrl">美国区 App Store 链接</label>
               <input
                 id="appUrl"
                 className="input"
-                defaultValue="https://apps.apple.com/us/app/workout-for-women-home-gym/id839285684"
+                value={appUrl}
+                onChange={(event) => setAppUrl(event.target.value)}
               />
             </div>
 
@@ -76,13 +162,23 @@ export default function Home() {
               <textarea
                 id="goal"
                 className="textarea"
-                defaultValue="重点分析低评分评论中的订阅转化阻力、训练体验问题和用户流失风险。"
+                value={goal}
+                onChange={(event) => setGoal(event.target.value)}
               />
             </div>
 
-            <button className="primary" type="button">
-              开始分析
-              <ArrowRight size={18} />
+            <button className="primary" type="submit" disabled={isLoading}>
+              {isLoading ? (
+                <>
+                  <Loader2 className="spinner" size={18} />
+                  分析中
+                </>
+              ) : (
+                <>
+                  开始分析
+                  <ArrowRight size={18} />
+                </>
+              )}
             </button>
           </form>
 
@@ -90,14 +186,24 @@ export default function Home() {
             <h2>执行流程</h2>
             {stages.map((stage, index) => {
               const Icon = stage.icon;
+              const status = getStageStatus(index);
               return (
-                <div className="stage" key={stage.title}>
+                <div className={`stage ${status}`} key={stage.key}>
                   <div className="stage-icon">
-                    {index === 0 ? <Loader2 size={15} /> : <Icon size={15} />}
+                    {status === "running" ? (
+                      <Loader2 className="spinner" size={15} />
+                    ) : status === "done" ? (
+                      <CheckCircle2 size={15} />
+                    ) : status === "error" ? (
+                      <AlertCircle size={15} />
+                    ) : (
+                      <Icon size={15} />
+                    )}
                   </div>
                   <div>
                     <strong>{stage.title}</strong>
                     <span>{stage.detail}</span>
+                    <em className="stage-status">{statusText[status]}</em>
                   </div>
                 </div>
               );
@@ -111,53 +217,174 @@ export default function Home() {
               <div>
                 <h2>评论到路线图工作台</h2>
                 <p>
-                  当前已完成本地应用骨架，下一步接入评论采集、JSON/CSV 导入、模型分析、
-                  PRD 生成和证据链校验。
+                  {result
+                    ? `已采集 ${result.collection.rawCount} 条原始评论，并清洗出 ${result.cleaning.cleanedCount} 条有效评论。下一阶段将接入模型分析、PRD 生成和证据链校验。`
+                    : "当前阶段已接入真实评论采集、清洗去重和基础统计。模型分析、PRD 生成和证据链校验将在后续阶段继续接入。"}
                 </p>
               </div>
               <div className="badge">
                 <CheckCircle2 size={15} />
-                本地骨架已就绪
+                {result ? "数据链已跑通" : "本地骨架已就绪"}
               </div>
             </div>
+
+            {error ? (
+              <div className="error-box">
+                <AlertCircle size={18} />
+                <span>{error}</span>
+              </div>
+            ) : null}
 
             <div className="metric-grid">
               <div className="metric">
                 <span>原始评论</span>
-                <strong>0</strong>
+                <strong>{result?.collection.rawCount ?? 0}</strong>
               </div>
               <div className="metric">
                 <span>清洗后评论</span>
-                <strong>0</strong>
+                <strong>{result?.cleaning.cleanedCount ?? 0}</strong>
               </div>
               <div className="metric">
-                <span>核心洞察</span>
-                <strong>0</strong>
+                <span>平均评分</span>
+                <strong>{result?.metrics.averageRating ?? "-"}</strong>
               </div>
               <div className="metric">
-                <span>证据链</span>
-                <strong>待运行</strong>
+                <span>证据充分度</span>
+                <strong>{result?.scope.evidenceLevel ?? "待运行"}</strong>
               </div>
             </div>
           </div>
 
           <div className="result-grid">
             <article className="result-panel">
-              <h3>过程产物</h3>
-              <ul>
-                <li>带来源信息的原始评论表。</li>
-                <li>包含重复、空值和异常数据统计的清洗报告。</li>
-                <li>基于评论证据生成的动态问题聚类。</li>
-              </ul>
+              <h3>分析范围</h3>
+              {result ? (
+                <>
+                  <dl className="kv-list">
+                    <div>
+                      <dt>App ID</dt>
+                      <dd>{result.scope.appId}</dd>
+                    </div>
+                    <div>
+                      <dt>评论区服</dt>
+                      <dd>美国区</dd>
+                    </div>
+                    <div>
+                      <dt>采集页数</dt>
+                      <dd>{result.collection.pages.filter((page) => page.status === "success").length}</dd>
+                    </div>
+                    <div>
+                      <dt>采集时间</dt>
+                      <dd>{formatDate(result.collection.fetchedAt)}</dd>
+                    </div>
+                  </dl>
+                  <div className="tag-row">
+                    {result.scope.focusAreas.map((area) => (
+                      <span className="tag" key={area}>
+                        {area}
+                      </span>
+                    ))}
+                  </div>
+                </>
+              ) : (
+                <p className="empty-state">点击“开始分析”后，这里会展示本次评论分析的范围和目标。</p>
+              )}
             </article>
 
             <article className="result-panel">
-              <h3>最终产物</h3>
-              <ul>
-                <li>按优先级、置信度和实现范围拆分的版本计划。</li>
-                <li>包含验收标准的 PRD 需求清单。</li>
-                <li>可追溯到需求和源评论的测试用例。</li>
-              </ul>
+              <h3>清洗报告</h3>
+              {result ? (
+                <div className="compact-grid">
+                  <div>
+                    <span>原始条数</span>
+                    <strong>{result.cleaning.rawCount}</strong>
+                  </div>
+                  <div>
+                    <span>有效条数</span>
+                    <strong>{result.cleaning.cleanedCount}</strong>
+                  </div>
+                  <div>
+                    <span>重复评论</span>
+                    <strong>{result.cleaning.duplicateCount}</strong>
+                  </div>
+                  <div>
+                    <span>异常评论</span>
+                    <strong>{result.cleaning.emptyCount + result.cleaning.malformedCount}</strong>
+                  </div>
+                </div>
+              ) : (
+                <p className="empty-state">清洗阶段会过滤空内容、异常评分和重复评论。</p>
+              )}
+            </article>
+
+            <article className="result-panel">
+              <h3>评分分布</h3>
+              {result ? (
+                <div className="rating-list">
+                  {[5, 4, 3, 2, 1].map((rating) => {
+                    const count = result.metrics.ratingDistribution[rating as 1 | 2 | 3 | 4 | 5];
+                    const width = `${Math.max((count / maxRatingCount) * 100, count > 0 ? 4 : 0)}%`;
+                    return (
+                      <div className="rating-row" key={rating}>
+                        <span className="rating-label">{rating} 星</span>
+                        <div className="rating-bar">
+                          <span className="rating-fill" style={{ width }} />
+                        </div>
+                        <strong>{count}</strong>
+                      </div>
+                    );
+                  })}
+                </div>
+              ) : (
+                <p className="empty-state">分析完成后会展示 1-5 星评论分布。</p>
+              )}
+            </article>
+
+            <article className="result-panel">
+              <h3>版本反馈</h3>
+              {result ? (
+                <>
+                  <p>
+                    低评分评论 {result.metrics.lowRatingCount} 条，占比{" "}
+                    {Math.round(result.metrics.lowRatingRatio * 100)}%。
+                  </p>
+                  {hasKnownVersions(result) ? (
+                    <div className="tag-row">
+                      {result.metrics.topVersions.map((item) => (
+                        <span className="tag" key={item.version}>
+                          v{item.version} · {item.count}
+                        </span>
+                      ))}
+                    </div>
+                  ) : (
+                    <p className="source-line">当前采集接口未返回版本号，版本维度先标记为数据限制。</p>
+                  )}
+                </>
+              ) : (
+                <p className="empty-state">这里会展示评论最多的版本和低评分比例。</p>
+              )}
+            </article>
+
+            <article className="result-panel wide">
+              <h3>评论样例</h3>
+              {result ? (
+                <div className="review-list">
+                  {result.sampleReviews.map((review) => (
+                    <div className="review-row" key={review.id}>
+                      <div className="review-meta">
+                        <strong>{review.rating} 星</strong>
+                        <span>v{review.version}</span>
+                        <span>{formatDate(review.updatedAt)}</span>
+                        <span>ID: {shortId(review.id)}</span>
+                      </div>
+                      <h4>{review.title || "无标题评论"}</h4>
+                      <p className="review-body">{truncate(review.body, 280)}</p>
+                    </div>
+                  ))}
+                </div>
+              ) : (
+                <p className="empty-state">优先展示低评分和较新的评论样例，后续会作为 AI 洞察的证据来源。</p>
+              )}
             </article>
 
             <article className="result-panel">
@@ -169,23 +396,54 @@ export default function Home() {
             </article>
 
             <article className="result-panel">
-              <h3>证据链校验</h3>
-              <div className="trace-row">
-                <span>洞察证据</span>
-                <strong>待运行</strong>
-              </div>
-              <div className="trace-row">
-                <span>需求覆盖</span>
-                <strong>待运行</strong>
-              </div>
-              <div className="trace-row">
-                <span>测试关联</span>
-                <strong>待运行</strong>
-              </div>
+              <h3>下一步</h3>
+              {result ? (
+                <ul>
+                  {result.nextSteps.map((step) => (
+                    <li key={step}>{step}</li>
+                  ))}
+                </ul>
+              ) : (
+                <ul>
+                  <li>先跑通真实评论采集和清洗。</li>
+                  <li>再接入模型驱动的动态主题发现。</li>
+                  <li>最后生成 PRD、测试用例和证据链校验结果。</li>
+                </ul>
+              )}
             </article>
           </div>
         </section>
       </div>
     </main>
   );
+}
+
+function truncate(value: string, maxLength: number): string {
+  if (value.length <= maxLength) {
+    return value;
+  }
+
+  return `${value.slice(0, maxLength).trim()}...`;
+}
+
+function formatDate(value: string | null): string {
+  if (!value) {
+    return "-";
+  }
+
+  return new Intl.DateTimeFormat("zh-CN", {
+    year: "numeric",
+    month: "2-digit",
+    day: "2-digit",
+    hour: "2-digit",
+    minute: "2-digit"
+  }).format(new Date(value));
+}
+
+function shortId(value: string): string {
+  return value.length > 18 ? `${value.slice(0, 18)}...` : value;
+}
+
+function hasKnownVersions(result: PipelineResult): boolean {
+  return result.metrics.topVersions.some((item) => item.version !== "unknown");
 }

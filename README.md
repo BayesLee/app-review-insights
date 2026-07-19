@@ -28,6 +28,24 @@ http://127.0.0.1:3000
 Environment variables should be copied from `.env.example` into `.env.local`.
 Do not commit API keys or other secrets.
 
+## Current Implementation
+
+- The UI can submit an App Store link and analysis goal to `/api/analyze`.
+- The backend parses the app id, requests U.S. storefront review rows, normalizes reviews, removes empty/malformed/duplicate items, and returns basic metrics.
+- The UI displays collection status, cleaned counts, rating distribution, low-rating ratio, data-source limitations, and low-rating review samples.
+
+## Data Collection Method
+
+The current collector uses Apple's public iTunes `userReviewsRow` JSON endpoint with the U.S. storefront header:
+
+```text
+x-apple-store-front: 143441-1,29
+```
+
+Each request fetches a 50-review page sorted by most recent reviews. The implementation caps online collection to at most 10 pages to avoid abnormal request volume.
+
+Known limitation: this stable endpoint does not return the app version for each review, so version-level analysis is currently marked as a data limitation instead of being inferred or fabricated. A later step should add cached sample data and JSON/CSV import so reviewers can evaluate the app when Apple's external endpoint is unavailable.
+
 ## Background
 
 This assessment uses the following real iOS app as the primary development and demonstration example:
