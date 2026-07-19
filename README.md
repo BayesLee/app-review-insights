@@ -46,7 +46,9 @@ MAX_REVIEW_PAGES=4
 - The backend parses the app id, requests U.S. storefront review rows, normalizes reviews, removes empty/malformed/duplicate items, and returns basic metrics.
 - The UI displays collection status, cleaned counts, rating distribution, low-rating ratio, data-source limitations, and low-rating review samples.
 - The backend performs model-driven issue discovery on cleaned reviews when `OPENAI_API_KEY` is configured.
+- When issue discovery succeeds, the backend generates validated version planning and structured PRD requirements from the checked themes.
 - The UI clearly separates deterministic statistics from AI model analysis results.
+- The UI displays the traceability chain from source reviews to AI issues to PRD requirements.
 
 ## Data Collection Method
 
@@ -81,7 +83,7 @@ The goal is inserted into the model prompt in two places: as a visible instructi
 
 ## AI Issue Discovery
 
-The current AI step only discovers user problem themes. It does not generate PRDs or test cases yet.
+The first AI step discovers user problem themes. It does not generate test cases yet.
 
 Workflow:
 
@@ -116,6 +118,67 @@ Hallucination controls:
 - `supportCount` is computed by code after validation, never trusted from the model.
 - Themes with no valid supporting reviews are removed.
 - Missing API keys, model API failures, invalid JSON, and skipped low-rating analysis are shown in the UI instead of fabricating results.
+
+## Version Planning and PRD Generation
+
+The second AI step runs only after issue discovery returns successfully. If AI issue discovery fails or is skipped, PRD generation is not called and the UI shows that the stage was skipped.
+
+Version planning output:
+
+```json
+{
+  "versionPlanId": "VP-001",
+  "versionName": "V1.1",
+  "objective": "版本目标",
+  "priority": "high",
+  "includedIssueIds": ["F-001"],
+  "rationale": "为什么放入该版本"
+}
+```
+
+PRD requirement output:
+
+```json
+{
+  "requirementId": "REQ-001",
+  "title": "需求标题",
+  "background": "背景",
+  "userProblem": "用户问题",
+  "productGoal": "产品目标",
+  "proposedSolution": "解决方案",
+  "inScope": ["范围内事项"],
+  "outOfScope": ["非范围事项"],
+  "acceptanceCriteria": ["可验证的验收标准"],
+  "priority": "high",
+  "risks": ["风险"],
+  "sourceIssueIds": ["F-001"],
+  "sourceReviewIds": ["R-001"]
+}
+```
+
+Planning logic:
+
+1. The prompt receives the resolved analysis goal and the already validated issue themes.
+2. The model drafts candidate version plans and PRD requirements from those themes.
+3. Code assigns `VP-xxx` and `REQ-xxx` ids after validation.
+4. Code removes nonexistent `issueId` values and filters duplicated issue references across requirements.
+5. Code removes nonexistent `reviewId` values and review ids that are not supporting evidence for the selected issue.
+6. Requirements with no valid issue evidence, no valid source reviews, or empty acceptance criteria are removed.
+7. The UI displays the chain `评论 R-xxx → 问题 F-xxx → 需求 REQ-xxx`.
+
+Evidence-chain controls:
+
+- `sourceIssueIds` must come from the current validated `issueDiscovery.themes`.
+- `sourceReviewIds` must come from the selected themes' checked `supportingReviewIds`.
+- Conflicting reviews may inform risk and uncertainty, but they cannot be used as source evidence for a requirement.
+- If themes exist but validated evidence is not enough to keep a requirement, the UI shows "证据不足，暂不生成需求。"
+- Invalid JSON or model API failures are shown as readable errors; the page does not fabricate PRD content.
+
+Current limitations:
+
+- Version planning is model-assisted and evidence-checked, but it is not connected to real release metadata because the current App Store review source does not return reliable app version numbers.
+- Requirement de-duplication currently keeps the first valid requirement for a given issue and removes later duplicate issue references.
+- Test case generation is intentionally not implemented in this stage.
 
 ## Background
 

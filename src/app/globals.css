@@ -592,6 +592,88 @@ button {
   line-height: 1.55;
 }
 
+.planning-panel {
+  display: grid;
+  gap: 16px;
+}
+
+.plan-list,
+.requirement-list {
+  display: grid;
+  gap: 14px;
+}
+
+.plan-card,
+.requirement-card {
+  border: 1px solid var(--line);
+  border-radius: 8px;
+  padding: 16px;
+  background: #fbfcfa;
+}
+
+.plan-head {
+  display: flex;
+  justify-content: space-between;
+  align-items: flex-start;
+  gap: 16px;
+}
+
+.plan-card h4,
+.requirement-card h4 {
+  margin: 5px 0 0;
+  font-size: 18px;
+}
+
+.plan-card > p {
+  margin: 12px 0 0;
+  color: var(--muted);
+  line-height: 1.6;
+}
+
+.planning-block {
+  margin-top: 16px;
+}
+
+.planning-block h5,
+.prd-grid h5,
+.list-block h5 {
+  margin: 0 0 8px;
+  font-size: 14px;
+}
+
+.planning-block p,
+.prd-grid p {
+  margin: 0;
+  color: var(--muted);
+  line-height: 1.55;
+}
+
+.prd-grid,
+.scope-grid {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 14px;
+  margin-top: 16px;
+}
+
+.prd-grid > div,
+.list-block {
+  border-top: 1px solid var(--line);
+  padding-top: 12px;
+}
+
+.list-block ul {
+  margin: 0;
+  padding-left: 18px;
+}
+
+.compact-review-list {
+  border: 1px solid var(--line);
+  border-radius: 8px;
+  padding: 12px;
+  background: #ffffff;
+}
+
 .tag-row {
   display: flex;
   flex-wrap: wrap;
@@ -720,11 +802,14 @@ button {
   .metric-grid,
   .result-grid,
   .ai-meta-grid,
-  .evidence-columns {
+  .evidence-columns,
+  .prd-grid,
+  .scope-grid {
     grid-template-columns: 1fr;
   }
 
-  .theme-head {
+  .theme-head,
+  .plan-head {
     display: grid;
   }
 

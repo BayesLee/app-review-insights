@@ -65,6 +65,7 @@ export type ScopeSummary = {
 };
 
 import type { IssueDiscoveryResult } from "@/lib/ai/issue-discovery";
+import type { ProductPlanningResult } from "@/lib/ai/product-planning";
 
 export type PipelineResult = {
   scope: ScopeSummary;
@@ -76,5 +77,6 @@ export type PipelineResult = {
   reviews: CleanedReview[];
   sampleReviews: CleanedReview[];
   issueDiscovery?: IssueDiscoveryResult;
+  productPlanning?: ProductPlanningResult;
   nextSteps: string[];
 };

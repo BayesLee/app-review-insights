@@ -128,7 +128,7 @@ export default function Home() {
     }
 
     if (isLoading) {
-      return index <= 3 ? "running" : "pending";
+      return index <= 4 ? "running" : "pending";
     }
 
     if (result) {
@@ -142,6 +142,18 @@ export default function Home() {
         }
 
         if (result.issueDiscovery?.status === "skipped") {
+          return "skipped";
+        }
+
+        return "error";
+      }
+
+      if (index === 4) {
+        if (result.productPlanning?.status === "success") {
+          return "done";
+        }
+
+        if (result.productPlanning?.status === "skipped") {
           return "skipped";
         }
 
@@ -249,8 +261,8 @@ export default function Home() {
                 <h2>评论到路线图工作台</h2>
                 <p>
                   {result
-                    ? `已采集 ${result.collection.rawCount} 条原始评论，清洗出 ${result.cleaning.cleanedCount} 条有效评论，并返回服务端 AI 主题分析状态。`
-                    : "当前阶段已接入真实评论采集、清洗去重和基础统计。模型分析、PRD 生成和证据链校验将在后续阶段继续接入。"}
+                    ? `已采集 ${result.collection.rawCount} 条原始评论，清洗出 ${result.cleaning.cleanedCount} 条有效评论，并返回服务端 AI 主题分析与 PRD 生成状态。`
+                    : "当前阶段已接入真实评论采集、清洗去重、基础统计、AI 主题发现、版本规划和 PRD 生成。测试用例将在后续阶段继续接入。"}
                 </p>
               </div>
               <div className="badge">
@@ -413,6 +425,27 @@ export default function Home() {
             </article>
 
             <article className="result-panel wide">
+              <h3>版本规划</h3>
+              {result?.productPlanning ? (
+                <VersionPlanningPanel
+                  issueDiscovery={result.issueDiscovery}
+                  result={result.productPlanning}
+                />
+              ) : (
+                <p className="empty-state">AI 主题发现成功后，这里会展示基于有效问题证据生成的版本规划。</p>
+              )}
+            </article>
+
+            <article className="result-panel wide">
+              <h3>PRD</h3>
+              {result?.productPlanning ? (
+                <ProductRequirementsPanel result={result.productPlanning} />
+              ) : (
+                <p className="empty-state">AI 主题发现成功后，这里会展示结构化产品需求和来源评论证据。</p>
+              )}
+            </article>
+
+            <article className="result-panel wide">
               <h3>评论样例</h3>
               {result ? (
                 <div className="review-list">
@@ -438,7 +471,7 @@ export default function Home() {
               <h3>Agent 策略</h3>
               <p>
                 确定性代码负责采集、字段归一、去重、统计和校验；模型负责主题发现、
-                问题合并、需求草拟和测试用例生成。
+                问题合并、版本规划和需求草拟。
               </p>
             </article>
 
@@ -454,7 +487,7 @@ export default function Home() {
                 <ul>
                   <li>先跑通真实评论采集和清洗。</li>
                   <li>再接入模型驱动的动态主题发现。</li>
-                  <li>最后生成 PRD、测试用例和证据链校验结果。</li>
+                  <li>最后补齐测试用例生成和更完整的证据链校验结果。</li>
                 </ul>
               )}
             </article>
@@ -583,10 +616,230 @@ function IssueDiscoveryPanel({ result }: { result: NonNullable<PipelineResult["i
   );
 }
 
+function VersionPlanningPanel({
+  result,
+  issueDiscovery
+}: {
+  result: NonNullable<PipelineResult["productPlanning"]>;
+  issueDiscovery?: PipelineResult["issueDiscovery"];
+}) {
+  const issueById = new Map(issueDiscovery?.themes.map((theme) => [theme.issueId, theme]) ?? []);
+
+  return (
+    <div className="planning-panel">
+      <ProductPlanningStatus result={result} />
+
+      {result.status === "success" && result.versionPlans.length === 0 ? (
+        <p className="empty-state">当前没有通过证据校验的版本规划。</p>
+      ) : null}
+
+      {result.versionPlans.length > 0 ? (
+        <div className="plan-list">
+          {result.versionPlans.map((plan) => (
+            <article className="plan-card" key={plan.versionPlanId}>
+              <div className="plan-head">
+                <div>
+                  <span className="issue-id">{plan.versionPlanId}</span>
+                  <h4>{plan.versionName}</h4>
+                </div>
+                <span className={`tag severity-${plan.priority}`}>优先级：{translateLevel(plan.priority)}</span>
+              </div>
+              <p>{plan.objective}</p>
+              <div className="planning-block">
+                <h5>包含的问题</h5>
+                <div className="tag-row">
+                  {plan.includedIssueIds.map((issueId) => {
+                    const issue = issueById.get(issueId);
+                    return (
+                      <span className="tag" key={issueId}>
+                        {issueId}
+                        {issue ? ` · ${issue.title}` : ""}
+                      </span>
+                    );
+                  })}
+                </div>
+              </div>
+              <div className="planning-block">
+                <h5>规划理由</h5>
+                <p>{plan.rationale}</p>
+              </div>
+            </article>
+          ))}
+        </div>
+      ) : null}
+    </div>
+  );
+}
+
+function ProductRequirementsPanel({ result }: { result: NonNullable<PipelineResult["productPlanning"]> }) {
+  return (
+    <div className="planning-panel">
+      <ProductPlanningStatus result={result} />
+
+      {result.status === "success" && result.requirements.length === 0 ? (
+        <p className="empty-state">证据不足，暂不生成需求。</p>
+      ) : null}
+
+      {result.requirements.length > 0 ? (
+        <div className="requirement-list">
+          {result.requirements.map((requirement) => (
+            <article className="requirement-card" key={requirement.requirementId}>
+              <div className="theme-head">
+                <div>
+                  <span className="issue-id">{requirement.requirementId}</span>
+                  <h4>{requirement.title}</h4>
+                </div>
+                <span className={`tag severity-${requirement.priority}`}>优先级：{translateLevel(requirement.priority)}</span>
+              </div>
+
+              <div className="prd-grid">
+                <div>
+                  <h5>用户问题</h5>
+                  <p>{requirement.userProblem}</p>
+                </div>
+                <div>
+                  <h5>解决方案</h5>
+                  <p>{requirement.proposedSolution}</p>
+                </div>
+                <div>
+                  <h5>产品目标</h5>
+                  <p>{requirement.productGoal}</p>
+                </div>
+                <div>
+                  <h5>背景</h5>
+                  <p>{requirement.background}</p>
+                </div>
+              </div>
+
+              <div className="scope-grid">
+                <ListBlock title="范围内" values={requirement.inScope} />
+                <ListBlock title="非范围" values={requirement.outOfScope} />
+              </div>
+
+              <div className="scope-grid">
+                <ListBlock title="验收标准" values={requirement.acceptanceCriteria} />
+                <ListBlock title="风险" values={requirement.risks} emptyText="暂无明显风险。" />
+              </div>
+
+              <div className="planning-block">
+                <h5>来源问题 ID</h5>
+                <div className="tag-row">
+                  {requirement.sourceIssueIds.map((issueId) => (
+                    <span className="tag" key={issueId}>
+                      {issueId}
+                    </span>
+                  ))}
+                </div>
+              </div>
+
+              <div className="planning-block">
+                <h5>追溯关系</h5>
+                {requirement.traceability.map((trace) => (
+                  <div className="trace-row" key={`${trace.requirementId}-${trace.issueId}-${trace.reviewId}`}>
+                    <strong>评论 {trace.reviewId}</strong>
+                    <span>→</span>
+                    <strong>问题 {trace.issueId}</strong>
+                    <span>→</span>
+                    <strong>需求 {trace.requirementId}</strong>
+                  </div>
+                ))}
+              </div>
+
+              <div className="planning-block">
+                <h5>来源评论原文</h5>
+                <div className="review-list compact-review-list">
+                  {requirement.sourceReviews.map((review) => (
+                    <ReviewEvidenceBlock key={review.reviewId} review={review} />
+                  ))}
+                </div>
+              </div>
+            </article>
+          ))}
+        </div>
+      ) : null}
+    </div>
+  );
+}
+
+function ProductPlanningStatus({ result }: { result: NonNullable<PipelineResult["productPlanning"]> }) {
+  return (
+    <>
+      <div className="ai-meta-grid">
+        <div>
+          <span>实际模型</span>
+          <strong>{result.model ?? "未配置"}</strong>
+        </div>
+        <div>
+          <span>输入问题主题</span>
+          <strong>{result.inputIssueCount}</strong>
+        </div>
+        <div>
+          <span>版本规划</span>
+          <strong>{result.versionPlans.length}</strong>
+        </div>
+        <div>
+          <span>PRD 需求</span>
+          <strong>{result.requirements.length}</strong>
+        </div>
+      </div>
+
+      {result.status === "error" ? (
+        <div className="error-box inline-error">
+          <AlertCircle size={18} />
+          <span>{result.error}</span>
+        </div>
+      ) : null}
+
+      {result.status === "skipped" ? (
+        <p className="source-line">{result.warnings[0] ?? "版本规划和 PRD 生成已跳过。"}</p>
+      ) : null}
+
+      {result.warnings.length > 0 && result.status !== "skipped" ? (
+        <div className="warning-list">
+          {result.warnings.map((warning) => (
+            <span key={warning}>{warning}</span>
+          ))}
+        </div>
+      ) : null}
+    </>
+  );
+}
+
+function ListBlock({
+  title,
+  values,
+  emptyText = "暂无。"
+}: {
+  title: string;
+  values: string[];
+  emptyText?: string;
+}) {
+  return (
+    <div className="list-block">
+      <h5>{title}</h5>
+      {values.length > 0 ? (
+        <ul>
+          {values.map((value) => (
+            <li key={value}>{value}</li>
+          ))}
+        </ul>
+      ) : (
+        <p className="empty-state">{emptyText}</p>
+      )}
+    </div>
+  );
+}
+
 function ReviewEvidenceBlock({
   review
 }: {
-  review: NonNullable<PipelineResult["issueDiscovery"]>["themes"][number]["supportingReviews"][number];
+  review: {
+    reviewId: string;
+    rating: number;
+    updatedAt: string;
+    title: string;
+    body: string;
+  };
 }) {
   return (
     <div className="evidence-block">

@@ -40,9 +40,9 @@ export async function runReviewPipeline(input: {
     reviews: cleaning.reviews,
     sampleReviews: pickSampleReviews(cleaning.reviews),
     nextSteps: [
-      "将洞察、需求和测试用例串成 review_id 可追溯链路。",
+      "继续生成与 PRD 需求一一对应的测试用例。",
       "补充 JSON/CSV 导入入口，支持离线评审和未知数据集。",
-      "在 AI 主题基础上继续生成 PRD 和测试用例。"
+      "将评论、问题、需求和测试用例串成完整可追溯链路。"
     ]
   };
 }
